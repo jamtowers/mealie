@@ -18,7 +18,11 @@ from mealie.db.db_setup import generate_session
 from mealie.lang import get_locale_provider
 from mealie.routes._base.routers import UserAPIRouter
 from mealie.schema.user import PrivateUser
-from mealie.schema.user.auth import CredentialsRequestForm, NativeOIDCTokenRequest, OIDCNativeConfig
+from mealie.schema.user.auth import (
+    CredentialsRequestForm,
+    NativeOIDCTokenRequest,
+    OIDCNativeConfig,
+)
 
 from .auth_cache import AuthCache
 
@@ -61,7 +65,7 @@ class MealieAuthToken(BaseModel):
         return cls(access_token=token, token_type=token_type).model_dump()
 
 
-@public_router.post("/token")
+@public_router.post("/token", response_model=MealieAuthToken)
 def get_token(request: Request, data: CredentialsRequestForm = Depends(), session: Session = Depends(generate_session)):
     if "x-forwarded-for" in request.headers:
         ip = request.headers["x-forwarded-for"]
@@ -112,7 +116,7 @@ async def oauth_login(request: Request):
     return response
 
 
-@public_router.get("/oauth/callback")
+@public_router.get("/oauth/callback", response_model=MealieAuthToken)
 async def oauth_callback(request: Request, session: Session = Depends(generate_session)):
     if not oauth:
         raise HTTPException(
@@ -162,7 +166,7 @@ async def oauth_native_config():
     )
 
 
-@public_router.post("/oauth/native/token")
+@public_router.post("/oauth/native/token", response_model=MealieAuthToken)
 async def oauth_native_token(data: NativeOIDCTokenRequest, session: Session = Depends(generate_session)):
     """Exchange a native client's authorization code for a Mealie token.
 
@@ -209,14 +213,18 @@ async def oauth_native_token(data: NativeOIDCTokenRequest, session: Session = De
     return MealieAuthToken.respond(access_token)
 
 
-@user_router.get("/refresh")
+@user_router.get("/refresh", response_model=MealieAuthToken)
 async def refresh_token(current_user: PrivateUser = Depends(get_current_user)):
     """Use a valid token to get another token"""
     access_token = security.create_access_token(data={"sub": str(current_user.id)})
     return MealieAuthToken.respond(access_token)
 
 
-@user_router.post("/logout")
+class LogoutResponse(BaseModel):
+    message: str
+
+
+@user_router.post("/logout", response_model=LogoutResponse)
 async def logout(
     response: Response,
     accept_language: Annotated[str | None, Header()] = None,
