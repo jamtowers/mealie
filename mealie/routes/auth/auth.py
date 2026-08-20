@@ -22,8 +22,8 @@ from mealie.schema.user.auth import CredentialsRequestForm, NativeOIDCTokenReque
 
 from .auth_cache import AuthCache
 
-public_router = APIRouter(tags=["Users: Authentication"])
-user_router = UserAPIRouter(tags=["Users: Authentication"])
+public_router = APIRouter(tags=["Users - Authentication"])
+user_router = UserAPIRouter(tags=["Users - Authentication"])
 logger = root_logger.get_logger("auth")
 
 

@@ -22,7 +22,7 @@ from mealie.services.migrations import (
     TandoorMigrator,
 )
 
-router = UserAPIRouter(prefix="/groups/migrations", tags=["Groups: Migrations"])
+router = UserAPIRouter(prefix="/groups/migrations", tags=["Groups - Migrations"])
 
 
 @controller(router)

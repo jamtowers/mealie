@@ -21,7 +21,7 @@ from mealie.schema.response import ErrorResponse
 from mealie.schema.response.pagination import PaginationQuery
 from mealie.services.recipe.recipe_service import RecipeService
 
-router = APIRouter(prefix="/households/recipe-actions", tags=["Households: Recipe Actions"])
+router = APIRouter(prefix="/households/recipe-actions", tags=["Households - Recipe Actions"])
 
 
 @controller(router)

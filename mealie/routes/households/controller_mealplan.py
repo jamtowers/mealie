@@ -23,7 +23,7 @@ from mealie.services.event_bus_service.event_types import (
     EventTypes,
 )
 
-router = APIRouter(prefix="/households/mealplans", tags=["Households: Mealplans"])
+router = APIRouter(prefix="/households/mealplans", tags=["Households - Mealplans"])
 
 
 @controller(router)

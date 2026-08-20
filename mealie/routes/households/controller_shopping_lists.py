@@ -35,7 +35,7 @@ from mealie.services.event_bus_service.event_types import (
 )
 from mealie.services.household_services.shopping_lists import ShoppingListService
 
-item_router = APIRouter(prefix="/households/shopping/items", tags=["Households: Shopping List Items"])
+item_router = APIRouter(prefix="/households/shopping/items", tags=["Households - Shopping List Items"])
 
 
 def publish_list_item_events(publisher: Callable, items_collection: ShoppingListItemsCollectionOut) -> None:
@@ -153,7 +153,7 @@ class ShoppingListItemController(BaseCrudController):
         return self.delete_many([item_id])
 
 
-router = APIRouter(prefix="/households/shopping/lists", tags=["Households: Shopping Lists"])
+router = APIRouter(prefix="/households/shopping/lists", tags=["Households - Shopping Lists"])
 
 
 @controller(router)

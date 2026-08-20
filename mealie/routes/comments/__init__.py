@@ -16,7 +16,7 @@ from mealie.schema.recipe.recipe_comments import (
 from mealie.schema.response.pagination import PaginationQuery
 from mealie.schema.response.responses import ErrorResponse, SuccessResponse
 
-router = APIRouter(prefix="/comments", tags=["Recipe: Comments"])
+router = APIRouter(prefix="/comments", tags=["Recipe - Comments"])
 
 
 @controller(router)

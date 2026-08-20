@@ -11,7 +11,7 @@ from mealie.routes._base.routers import UserAPIRouter
 from mealie.routes.users._helpers import assert_user_change_allowed
 from mealie.schema.user import PrivateUser
 
-router = UserAPIRouter(prefix="", tags=["Users: Images"])
+router = UserAPIRouter(prefix="", tags=["Users - Images"])
 
 
 @controller(router)

@@ -21,7 +21,7 @@ from mealie.services.event_bus_service.event_types import (
     EventTypes,
 )
 
-router = APIRouter(prefix="/households/cookbooks", tags=["Households: Cookbooks"], route_class=MealieCrudRoute)
+router = APIRouter(prefix="/households/cookbooks", tags=["Households - Cookbooks"], route_class=MealieCrudRoute)
 
 
 @controller(router)

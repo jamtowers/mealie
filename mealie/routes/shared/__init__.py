@@ -10,7 +10,7 @@ from mealie.routes._base.routers import UserAPIRouter
 from mealie.schema.recipe import RecipeShareTokenSummary
 from mealie.schema.recipe.recipe_share_token import RecipeShareToken, RecipeShareTokenCreate, RecipeShareTokenSave
 
-router = UserAPIRouter(prefix="/shared/recipes", tags=["Shared: Recipes"])
+router = UserAPIRouter(prefix="/shared/recipes", tags=["Shared - Recipes"])
 
 
 @controller(router)

@@ -11,7 +11,7 @@ from mealie.schema.response import ErrorResponse, SuccessResponse
 from mealie.schema.user import ChangePassword, UserBase, UserOut
 from mealie.schema.user.user import UserRatings, UserRatingSummary
 
-user_router = UserAPIRouter(prefix="/users", tags=["Users: CRUD"])
+user_router = UserAPIRouter(prefix="/users", tags=["Users - CRUD"])
 
 
 @controller(user_router)

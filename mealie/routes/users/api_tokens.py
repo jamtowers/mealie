@@ -13,7 +13,7 @@ from mealie.schema.user import (
     LongLiveTokenInDB,
 )
 
-router = UserAPIRouter(prefix="/users", tags=["Users: Tokens"])
+router = UserAPIRouter(prefix="/users", tags=["Users - Tokens"])
 
 
 @controller(router)

@@ -13,7 +13,7 @@ from mealie.schema.response.pagination import PaginationBase, PaginationQuery
 from mealie.schema.user.user import UserOut
 from mealie.services.household_services.household_service import HouseholdService
 
-router = UserAPIRouter(prefix="/households", tags=["Households: Self Service"])
+router = UserAPIRouter(prefix="/households", tags=["Households - Self Service"])
 
 
 @controller(router)

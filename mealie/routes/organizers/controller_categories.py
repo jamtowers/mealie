@@ -14,7 +14,7 @@ from mealie.schema.response.pagination import PaginationQuery
 from mealie.services import urls
 from mealie.services.event_bus_service.event_types import EventCategoryData, EventOperation, EventTypes
 
-router = APIRouter(prefix="/categories", tags=["Organizer: Categories"])
+router = APIRouter(prefix="/categories", tags=["Organizer - Categories"])
 
 
 class CategorySummary(BaseModel):

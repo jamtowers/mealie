@@ -755,7 +755,7 @@ class RecipeController(BaseRecipeController):
     # ==================================================================================================================
     # Image and Assets
 
-    @router.post("/{slug}/image", response_model=UpdateImageResponse, tags=["Recipe: Images and Assets"])
+    @router.post("/{slug}/image", response_model=UpdateImageResponse, tags=["Recipe - Images and Assets"])
     async def scrape_image_url(self, slug: str, url: ScrapeRecipe):
         recipe = self.mixins.get_one(slug)
         data_service = RecipeDataService(recipe.id)
@@ -777,7 +777,7 @@ class RecipeController(BaseRecipeController):
         self.service.update_one(recipe.slug, recipe)
         return UpdateImageResponse(image=recipe.image)
 
-    @router.put("/{slug}/image", response_model=UpdateImageResponse, tags=["Recipe: Images and Assets"])
+    @router.put("/{slug}/image", response_model=UpdateImageResponse, tags=["Recipe - Images and Assets"])
     def update_recipe_image(self, slug: str, image: bytes = File(...), extension: str = Form(...)):
         try:
             new_version = self.service.update_recipe_image(slug, image, extension)
@@ -786,7 +786,7 @@ class RecipeController(BaseRecipeController):
             self.handle_exceptions(e)
             return None
 
-    @router.delete("/{slug}/image", tags=["Recipe: Images and Assets"])
+    @router.delete("/{slug}/image", tags=["Recipe - Images and Assets"])
     def delete_recipe_image(self, slug: str):
         try:
             self.service.delete_recipe_image(slug)
@@ -795,7 +795,7 @@ class RecipeController(BaseRecipeController):
             self.handle_exceptions(e)
             return None
 
-    @router.post("/{slug}/assets", response_model=RecipeAsset, tags=["Recipe: Images and Assets"])
+    @router.post("/{slug}/assets", response_model=RecipeAsset, tags=["Recipe - Images and Assets"])
     def upload_recipe_asset(
         self,
         slug: str,

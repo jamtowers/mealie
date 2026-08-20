@@ -10,7 +10,7 @@ from mealie.routes._base.mixins import HttpRepo
 from mealie.schema.reports.reports import ReportCategory, ReportCreate, ReportOut, ReportSummary
 from mealie.schema.response.responses import ErrorResponse, SuccessResponse
 
-router = APIRouter(prefix="/groups/reports", tags=["Groups: Reports"])
+router = APIRouter(prefix="/groups/reports", tags=["Groups - Reports"])
 
 
 @controller(router)

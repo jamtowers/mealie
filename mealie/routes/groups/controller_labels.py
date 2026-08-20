@@ -18,7 +18,7 @@ from mealie.schema.response.pagination import PaginationQuery
 from mealie.services.event_bus_service.event_types import EventLabelData, EventOperation, EventTypes
 from mealie.services.group_services.labels_service import MultiPurposeLabelService
 
-router = APIRouter(prefix="/groups/labels", tags=["Groups: Multi Purpose Labels"], route_class=MealieCrudRoute)
+router = APIRouter(prefix="/groups/labels", tags=["Groups - Multi Purpose Labels"], route_class=MealieCrudRoute)
 
 
 @controller(router)

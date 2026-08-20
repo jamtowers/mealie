@@ -13,7 +13,7 @@ from mealie.schema.response.pagination import PaginationQuery
 from mealie.services import urls
 from mealie.services.event_bus_service.event_types import EventOperation, EventTagData, EventTypes
 
-router = APIRouter(prefix="/tags", tags=["Organizer: Tags"])
+router = APIRouter(prefix="/tags", tags=["Organizer - Tags"])
 
 
 @controller(router)

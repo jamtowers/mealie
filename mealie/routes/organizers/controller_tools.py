@@ -11,7 +11,7 @@ from mealie.schema.recipe.recipe import RecipeTool, RecipeToolPagination
 from mealie.schema.recipe.recipe_tool import RecipeToolCreate, RecipeToolResponse, RecipeToolSave
 from mealie.schema.response.pagination import PaginationQuery
 
-router = APIRouter(prefix="/tools", tags=["Organizer: Tools"])
+router = APIRouter(prefix="/tools", tags=["Organizer - Tools"])
 
 
 @controller(router)

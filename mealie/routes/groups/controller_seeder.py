@@ -8,7 +8,7 @@ from mealie.schema.group.group_seeder import SeederConfig
 from mealie.schema.response.responses import ErrorResponse, SuccessResponse
 from mealie.services.seeder.seeder_service import SeederService
 
-router = APIRouter(prefix="/groups/seeders", tags=["Groups: Seeders"])
+router = APIRouter(prefix="/groups/seeders", tags=["Groups - Seeders"])
 
 
 @controller(router)

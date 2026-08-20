@@ -6,7 +6,7 @@ from mealie.routes._base.routers import UserAPIRouter
 from mealie.schema.household.household import HouseholdSummary
 from mealie.schema.response.pagination import PaginationBase, PaginationQuery
 
-router = UserAPIRouter(prefix="/groups/households", tags=["Groups: Households"])
+router = UserAPIRouter(prefix="/groups/households", tags=["Groups - Households"])
 
 
 @controller(router)

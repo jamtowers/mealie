@@ -18,7 +18,7 @@ from mealie.schema.recipe.recipe_ingredient import (
 from mealie.schema.response.pagination import PaginationQuery
 from mealie.schema.response.responses import SuccessResponse
 
-router = APIRouter(prefix="/units", tags=["Recipes: Units"], route_class=MealieCrudRoute)
+router = APIRouter(prefix="/units", tags=["Recipes - Units"], route_class=MealieCrudRoute)
 
 
 @controller(router)

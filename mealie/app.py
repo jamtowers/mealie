@@ -108,7 +108,7 @@ app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET)
 app.add_middleware(LocaleContextMiddleware)
 
 if not settings.PRODUCTION:
-    allowed_origins = ["http://localhost:3000"]
+    allowed_origins = ["http://localhost:3000", "http://localhost:3001"]
 
     app.add_middleware(
         CORSMiddleware,
