@@ -8,7 +8,7 @@ import { TranslateService } from "@ngx-translate/core";
 import { filter, map, tap } from "rxjs";
 
 @Component({
-  selector: "app-root",
+  selector: "mealie-root",
   imports: [RouterOutlet],
   templateUrl: "./app.html",
   styleUrl: "./app.scss",

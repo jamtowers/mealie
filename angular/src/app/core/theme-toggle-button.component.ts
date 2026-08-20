@@ -9,7 +9,7 @@ import { TranslatePipe } from "@ngx-translate/core";
 import { ThemeService } from "@theme/theme.service";
 
 @Component({
-  selector: "app-theme-toggle-button",
+  selector: "mealie-theme-toggle-button",
   imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
   template: `
     <!--We use tooltip.show() on click here just so the tooltip doesn't close on click (looks bad)-->

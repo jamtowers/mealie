@@ -19,7 +19,7 @@ import { SnackbarProvider } from "@theme/snackbar.provider";
 import { AuthService, SignInCredentials } from "../auth.service";
 
 @Component({
-  selector: "app-login",
+  selector: "mealie-login",
   imports: [
     MatButtonModule,
     MatCardModule,

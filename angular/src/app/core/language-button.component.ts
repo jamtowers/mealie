@@ -10,7 +10,7 @@ import { TranslatePipe } from "@ngx-translate/core";
 import LanguageDialogComponent from "../locale/language-dialog.component";
 
 @Component({
-  selector: "app-language-button",
+  selector: "mealie-language-button",
   imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
   template: `
     <button matIconButton [matTooltip]="'settings.language' | translate" (click)="openLanguageDialog()">

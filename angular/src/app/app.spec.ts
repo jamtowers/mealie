@@ -16,25 +16,25 @@ import { mockLocalStorage } from "@testing/local-storage.mock";
 import { App } from "./app";
 
 @Component({
-  selector: "app-empty",
+  selector: "mealie-empty",
   template: "",
 })
 class EmptyComponent {}
 
 @Component({
-  selector: "app-login",
+  selector: "mealie-login",
   template: "",
 })
 class LoginComponent {}
 
 @Component({
-  selector: "app-dashboard",
+  selector: "mealie-dashboard",
   template: "",
 })
 class DashboardComponent {}
 
 @Component({
-  selector: "app-child",
+  selector: "mealie-child",
   template: "",
 })
 class ChildComponent {}

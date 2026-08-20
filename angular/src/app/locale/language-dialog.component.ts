@@ -26,7 +26,7 @@ const fuse = new Fuse(LOCALES, {
 });
 
 @Component({
-  selector: "app-language-dialog",
+  selector: "mealie-language-dialog",
   imports: [
     MatAutocompleteModule,
     MatButtonModule,

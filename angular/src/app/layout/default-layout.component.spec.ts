@@ -145,8 +145,8 @@ describe("DefaultLayout", () => {
     });
 
     it("should render theme toggle and language button components", () => {
-      expect(fixture.nativeElement.querySelector("app-theme-toggle-button")).toBeTruthy();
-      expect(fixture.nativeElement.querySelector("app-language-button")).toBeTruthy();
+      expect(fixture.nativeElement.querySelector("mealie-theme-toggle-button")).toBeTruthy();
+      expect(fixture.nativeElement.querySelector("mealie-language-button")).toBeTruthy();
     });
 
     it("should call auth.signOut when logout button is clicked", async () => {

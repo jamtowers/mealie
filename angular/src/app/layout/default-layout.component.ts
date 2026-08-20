@@ -31,7 +31,7 @@ interface CreateLink extends Link {
 }
 
 @Component({
-  selector: "app-default-layout",
+  selector: "mealie-default-layout",
   imports: [
     RouterLink,
     RouterOutlet,
