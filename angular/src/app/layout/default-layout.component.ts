@@ -3,7 +3,6 @@ import { Component, OnDestroy, computed, inject, signal } from "@angular/core";
 import { RouterLink, RouterOutlet } from "@angular/router";
 
 import { MatButtonModule } from "@angular/material/button";
-import { MatDialog } from "@angular/material/dialog";
 import { MatDividerModule } from "@angular/material/divider";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { MatIconModule } from "@angular/material/icon";
@@ -15,10 +14,9 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 
 import { TranslatePipe } from "@ngx-translate/core";
 
-import { ThemeService } from "@theme/theme.service";
-
 import { AuthService } from "../auth/auth.service";
-import LanguageDialogComponent from "../locale/language-dialog.component";
+import LanguageButton from "../core/language-button.component";
+import ThemeToggleButton from "../core/theme-toggle-button.component";
 
 interface Link {
   icon: string;
@@ -47,19 +45,15 @@ interface CreateLink extends Link {
     MatToolbarModule,
     MatTooltipModule,
     TranslatePipe,
+    ThemeToggleButton,
+    LanguageButton,
   ],
   templateUrl: "./default-layout.component.html",
   styleUrl: "./default-layout.component.scss",
 })
 export default class DefaultLayout implements OnDestroy {
-  protected readonly theme = inject(ThemeService);
   protected readonly auth = inject(AuthService);
-  protected readonly dialog = inject(MatDialog);
   protected readonly isMobile = signal(true);
-
-  protected openLanguageDialog(): void {
-    this.dialog.open(LanguageDialogComponent);
-  }
 
   /** Current user's full name (or username as fallback) */
   protected userName = computed(() => {

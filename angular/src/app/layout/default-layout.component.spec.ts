@@ -102,7 +102,6 @@ class TestHostComponent {}
 describe("DefaultLayout", () => {
   let fixture: ComponentFixture<DefaultLayout>;
   let authService: AuthServiceStub;
-  let themeService: ThemeServiceStub;
 
   beforeEach(async () => {
     mockLocalStorage();
@@ -122,7 +121,6 @@ describe("DefaultLayout", () => {
     }).compileComponents();
 
     authService = TestBed.inject(AuthService) as unknown as AuthServiceStub;
-    themeService = TestBed.inject(ThemeService) as unknown as ThemeServiceStub;
 
     // Register mock SVG icons so MatIcon doesn't error
     mockSvgIcons(TestBed.inject(MatIconRegistry), DEFAULT_LAYOUT_ICONS);
@@ -146,13 +144,9 @@ describe("DefaultLayout", () => {
       expect(buttons.length).toBeGreaterThan(0);
     });
 
-    it("should cycle theme when theme button is clicked", async () => {
-      themeService.cycle = vi.fn();
-      const buttons = fixture.nativeElement.querySelectorAll("mat-toolbar button");
-      const themeButton = buttons[2];
-      await themeButton.click();
-      await fixture.whenStable();
-      expect(themeService.cycle).toHaveBeenCalled();
+    it("should render theme toggle and language button components", () => {
+      expect(fixture.nativeElement.querySelector("app-theme-toggle-button")).toBeTruthy();
+      expect(fixture.nativeElement.querySelector("app-language-button")).toBeTruthy();
     });
 
     it("should call auth.signOut when logout button is clicked", async () => {
@@ -163,17 +157,6 @@ describe("DefaultLayout", () => {
       await logoutButton.click();
       await fixture.whenStable();
       expect(signOutSpy).toHaveBeenCalled();
-    });
-
-    it("should open language dialog when language button is clicked", async () => {
-      const dialog = TestBed.inject(MatDialog) as unknown as MatDialogStub;
-      const openSpy = vi.spyOn(dialog, "open");
-
-      const buttons = fixture.nativeElement.querySelectorAll("mat-toolbar button");
-      const languageButton = buttons[3];
-      await languageButton.click();
-      await fixture.whenStable();
-      expect(openSpy).toHaveBeenCalled();
     });
   });
 

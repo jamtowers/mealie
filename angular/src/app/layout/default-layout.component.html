@@ -12,18 +12,8 @@
 
   <span class="spacer"></span>
 
-  <!--We use tooltip.show() on click here just so the tooltip doesn't close on click (looks bad)-->
-  <button
-    matIconButton
-    #tooltip="matTooltip"
-    (click)="theme.cycle(); tooltip.show()"
-    [matTooltip]="theme.currentModeTranslateKey() | translate"
-  >
-    <mat-icon [svgIcon]="theme.currentModeIcon()"></mat-icon>
-  </button>
-  <button matIconButton [matTooltip]="'settings.language' | translate" (click)="openLanguageDialog()">
-    <mat-icon svgIcon="translate"></mat-icon>
-  </button>
+  <app-theme-toggle-button />
+  <app-language-button />
   <!--TODO make this open search bar-->
   <a matIconButton href="https://www.google.com/" target="_blank" [matTooltip]="'search.search' | translate">
     <mat-icon svgIcon="magnify"></mat-icon>
