@@ -1,0 +1,65 @@
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+
+@use "@angular/material" as mat;
+@use "theme/_theme-colors" as palette;
+@use "sass:color";
+
+// Use theme overrides for each
+@use "theme/button.overrides.scss";
+@use "theme/form-field.overrides.scss";
+@use "theme/menu.overrides.scss";
+@use "theme/sidebar.overrides.scss";
+@use "theme/snack-bar.overrides.scss";
+
+// Material 3 turns theme colors into various shades for contrast and :-ms-input-placeholder
+// so we're setting the brand color here so the toolbar can be the same color as in the original app
+
+html {
+  height: 100%;
+  color-scheme: light dark;
+  @include mat.theme(
+    (
+      color: (
+        primary: palette.$primary-palette,
+        tertiary: palette.$tertiary-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+  /* Custom colours outside of regular M3 theme */
+  --brand-color: #e58325;
+  --color-on-brand: white;
+  /* These two existed in the told theme but are currently unused in the new UI */
+  /* --mealie-success: #43A047; */
+  /* --mealie-warning: #FF6D00; */
+
+  /* If we need dark variants for custom variables this is how you'd do it  */
+  /* @media (prefers-color-scheme: dark) {
+    --brand-color: #e58325;
+    --mealie-success: #43A047;
+    --mealie-warning: #FF6D00;
+  } */
+}
+
+body {
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}
+
+/* Common spacer pattern, use when you need to fill space between elements in a flex box */
+.spacer {
+  flex: 1 1 auto;
+}

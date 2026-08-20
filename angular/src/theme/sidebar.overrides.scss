@@ -1,0 +1,44 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of sidebar
+:root {
+  @include mat.sidenav-overrides(
+    (
+      container-width: 256px,
+      container-shape: 0,
+      container-divider-color: var(--mat-sys-outline-variant),
+      container-background-color: var(--mat-sys-surface-container),
+    )
+  );
+}
+
+// format expansion panels in nav lists like nav list buttons
+// currently only handles having an icon at the start of the element and none
+// which is to say this is robust enough for us here, but it isn't designed to handle every case
+mat-nav-list {
+  @include mat.expansion-overrides(
+    (
+      container-shape: 24px,
+      container-background-color: var(--mat-sys-surface-container),
+      container-elevation-shadow: 0,
+    )
+  );
+
+  mat-expansion-panel {
+    mat-expansion-panel-header {
+      &:has(mat-icon:first-child).mat-expansion-panel-header {
+        padding: 0 24px 0 0;
+      }
+      mat-icon {
+        margin: 0 16px;
+
+        & + span {
+          font-weight: normal;
+        }
+      }
+    }
+    .mat-expansion-panel-body {
+      padding: 0 8px 16px;
+    }
+  }
+}

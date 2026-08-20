@@ -1,0 +1,11 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of form-field
+/* :root {
+  @include mat.form-field-overrides(());
+} */
+
+/* If an icon is within a text prefix we add a little padding to the right of the icon so it's not flat on the text */
+.mat-mdc-form-field-text-prefix > mat-icon {
+  padding-right: 8px;
+}

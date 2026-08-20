@@ -1,0 +1,16 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of snackbar
+/* :root {
+  @include mat.snack-bar-overrides(());
+} */
+
+.error {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: var(--mat-sys-error),
+      button-color: var(--mat-sys-on-error),
+      supporting-text-color: var(--mat-sys-on-error),
+    )
+  );
+}

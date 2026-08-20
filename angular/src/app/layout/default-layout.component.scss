@@ -1,0 +1,133 @@
+@use "@angular/material" as mat;
+
+:host {
+  display: grid;
+  grid-template-areas:
+    "toolbar"
+    "content";
+  grid-auto-rows: min-content auto;
+  height: 100vh;
+
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: var(--brand-color),
+      container-text-color: var(--color-on-brand),
+      standard-height: "64px",
+      mobile-height: "48px",
+    )
+  );
+}
+
+mat-toolbar {
+  // overide the theme color to white so the hover color doesn't change if we're in the dark or light mode
+  --mat-icon-button-state-layer-color: white;
+  --mat-button-text-state-layer-color: white;
+  /* --mat-sys-hover-state-layer-opacity: 0.5; */
+  grid-area: toolbar;
+  transition: height 400ms;
+  * {
+    color: inherit;
+  }
+  & > a {
+    display: flex;
+    gap: 4px;
+    text-decoration: none;
+    align-items: center;
+  }
+}
+
+#toolbar-icon-button {
+  --mat-icon-button-icon-size: 40px;
+  height: 48px;
+  width: 48px;
+  mat-icon {
+    height: var(--mat-icon-button-icon-size);
+    width: var(--mat-icon-button-icon-size);
+  }
+}
+
+#user-box {
+  display: grid;
+  grid-template-areas:
+    "avatar name"
+    "avatar fav-recipes";
+  grid-auto-columns: min-content auto;
+  grid-auto-rows: 50% 50%;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  height: 64px;
+  text-decoration: none;
+  color: var(--mat-sys-on-surface);
+  position: relative;
+  padding: 6px 0;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    content: "";
+    opacity: 0;
+  }
+  &:hover::before {
+    background-color: var(--mat-sys-on-surface);
+    opacity: var(--mat-sys-hover-state-layer-opacity);
+  }
+
+  .avatar {
+    grid-area: avatar;
+    /* display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    font: var(--mat-sys-title-medium); */
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    margin: 12px;
+  }
+  .name {
+    grid-area: name;
+    margin-top: auto;
+    font: var(--mat-sys-body-large);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    margin-right: 8px;
+  }
+  .fav-recipes {
+    grid-area: fav-recipes;
+    margin-left: -4px;
+    --mat-button-text-with-icon-horizontal-padding: 8px;
+  }
+}
+
+mat-sidenav-container {
+  grid-area: content;
+  transition: height 400ms;
+}
+
+mat-sidenav {
+  #create-button {
+    margin: 8px 8px 0;
+  }
+  mat-nav-list {
+    margin: 0 4px;
+  }
+}
+
+.create-menu-icon {
+  --mat-menu-item-icon-size: 32px;
+  font-size: 32px;
+}
+
+.create-menu-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-subtitle {
+  opacity: 0.6;
+}

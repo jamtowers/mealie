@@ -1,0 +1,1 @@
+../../../../frontend/app/composables/use-locales/available-locales.ts

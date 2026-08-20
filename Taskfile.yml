@@ -162,7 +162,7 @@ tasks:
       - pip hash dist/mealie-{{.MEALIE_VERSION}}.tar.gz | tail -n1 >> dist/requirements.txt
     vars:
       MEALIE_VERSION:
-         sh: python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"
+        sh: python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"
     sources:
       - uv.lock
       - pyproject.toml
@@ -291,9 +291,9 @@ tasks:
   docker:build-from-package:
     desc: Builds the Docker image from the existing Python package in dist/
     deps:
-       - py:package
+      - py:package
     cmds:
-       - docker build --tag mealie:dev --file docker/Dockerfile --build-arg COMMIT={{.GIT_COMMIT}} --build-context packages=dist .
+      - docker build --tag mealie:dev --file docker/Dockerfile --build-arg COMMIT={{.GIT_COMMIT}} --build-context packages=dist .
     vars:
       GIT_COMMIT:
         sh: git rev-parse HEAD
@@ -307,7 +307,7 @@ tasks:
   e2e:build-image:
     desc: builds the e2e test docker image
     deps:
-       - py:package
+      - py:package
     cmds:
       - docker build --tag mealie:e2e --file docker/Dockerfile --build-context packages=dist .
     sources:
@@ -318,9 +318,9 @@ tasks:
     desc: Builds the image and starts the containers for e2e testing
     dir: tests/e2e/docker
     deps:
-       - e2e:build-image
+      - e2e:build-image
     vars:
-      WAIT_UNTIL_HEALTHY: '{{if .WAIT_UNTIL_HEALTHY}}--wait{{else}}{{end}}'
+      WAIT_UNTIL_HEALTHY: "{{if .WAIT_UNTIL_HEALTHY}}--wait{{else}}{{end}}"
     cmds:
       - docker compose up -d {{.WAIT_UNTIL_HEALTHY}}
 
@@ -336,9 +336,9 @@ tasks:
     deps:
       - setup:e2e
     vars:
-      PREVENT_REPORT_OPEN: '{{if .PREVENT_REPORT_OPEN}}PLAYWRIGHT_HTML_OPEN=never{{else}}{{end}}'
+      PREVENT_REPORT_OPEN: "{{if .PREVENT_REPORT_OPEN}}PLAYWRIGHT_HTML_OPEN=never{{else}}{{end}}"
     cmds:
-      - '{{.PREVENT_REPORT_OPEN}} yarn playwright test'
+      - "{{.PREVENT_REPORT_OPEN}} yarn playwright test"
 
   e2e:
     desc: runs the full e2e test suite
@@ -348,3 +348,42 @@ tasks:
       - defer: { task: e2e:stop-server }
       - task: e2e:test
         vars: { PREVENT_REPORT_OPEN: true }
+
+  angular:setup:
+    desc: setup angular dependencies
+    dir: angular
+    cmds:
+      - pnpm install
+    sources:
+      - package.json
+      - pnpm-lock.yaml
+
+  angular:
+    desc: runs the angular frontend dev server
+    dir: angular
+    cmds:
+      - ng serve --port 3001
+
+  angular:build:
+    desc: builds the angular ui in angular/dist
+    dir: angular
+    cmds:
+      - ng build --configuration production
+
+  angular:lint:
+    desc: runs the angular linter
+    dir: angular
+    cmds:
+      - ng lint
+
+  angular:test:
+    desc: runs the angular tests
+    dir: angular
+    cmds:
+      - ng test --watch=false
+
+  angular:check:
+    desc: runs all angular checks
+    deps:
+      - angular:lint
+      - angular:test

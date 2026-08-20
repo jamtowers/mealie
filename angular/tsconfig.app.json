@@ -1,0 +1,13 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+  },
+  // We include this here as we're symlinking this file from the vue app since it's genereted
+  // Saves on having to remember to generate it twice
+  "files": ["../frontend/app/composables/use-locales/available-locales.ts"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"],
+}

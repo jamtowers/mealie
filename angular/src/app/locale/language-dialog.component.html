@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>
+  <mat-icon svgIcon="translate"></mat-icon>
+  {{ "language-dialog.choose-language" | translate }}
+</h2>
+
+<mat-dialog-content>
+  <p>{{ "language-dialog.select-description" | translate }}</p>
+
+  <mat-form-field class="locale-field" appearance="outline">
+    <mat-label>{{ "settings.language" | translate }}</mat-label>
+    <input
+      #trigger="matAutocompleteTrigger"
+      matInput
+      [matAutocomplete]="auto"
+      [value]="query()"
+      (input)="onQueryInput($event)"
+    />
+    <mat-autocomplete
+      #auto="matAutocomplete"
+      (opened)="onPanelOpened(trigger)"
+      (panelClosing)="onPanelClosing()"
+      (optionSelected)="onLocaleSelected($event)"
+    >
+      @for (locale of filteredLocales(); track locale.value) {
+        <mat-option [value]="locale">
+          <span class="locale-name">{{ locale.name }}</span>
+          <br />
+          <span class="locale-progress">{{ locale.progress }}% {{ "language-dialog.translated" | translate }}</span>
+        </mat-option>
+      }
+      @if (filteredLocales().length === 0) {
+        <mat-option disabled>{{ "search.no-results" | translate }}</mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <p class="contribute" [innerHTML]="contributeHtml()"></p>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button matButton mat-dialog-close>{{ "general.cancel" | translate }}</button>
+</mat-dialog-actions>

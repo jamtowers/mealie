@@ -1,0 +1,67 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of button
+:root {
+  @include mat.fab-overrides(
+    (
+      extended-container-height: 44px,
+    )
+  );
+
+  /* Hack to get the svg icons centered vertically properly, seems regular text icons are fine
+  but the svg icons render too low with the default inline-block display prop */
+  .mdc-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mdc-icon-button > mat-icon {
+    display: flex;
+  }
+}
+
+.small {
+  @include mat.button-overrides(
+    (
+      filled-container-height: 28px,
+      outlined-container-height: 28px,
+      protected-container-height: 28px,
+      text-container-height: 28px,
+      tonal-container-height: 28px,
+      text-label-text-font: var(--mat-sys-label-small-font),
+      text-label-text-size: var(--mat-sys-label-small-size),
+    )
+  );
+  &.mdc-button .mat-icon {
+    font-size: 1rem;
+    height: 1rem;
+    width: 1rem;
+  }
+}
+
+.secondary {
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--mat-sys-secondary),
+      text-state-layer-color: var(--mat-sys-secondary),
+    )
+  );
+}
+
+.tertiary {
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--mat-sys-tertiary),
+      text-state-layer-color: var(--mat-sys-tertiary),
+    )
+  );
+}
+
+.on-surface {
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--mat-sys-on-surface),
+      text-state-layer-color: var(--mat-sys-on-surface),
+    )
+  );
+}

@@ -1,0 +1,14 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of menu
+/* :root {
+  @include mat.menu-overrides(());
+} */
+
+.high {
+  @include mat.menu-overrides(
+    (
+      container-color: var(--mat-sys-surface-container-high),
+    )
+  );
+}

@@ -1,0 +1,102 @@
+<mat-toolbar>
+  <button matIconButton (click)="sidenav.toggle()">
+    <mat-icon svgIcon="menu"></mat-icon>
+  </button>
+
+  <a routerLink="/">
+    <button matIconButton id="toolbar-icon-button">
+      <mat-icon svgIcon="silverware-variant" />
+    </button>
+    <span>Mealie</span>
+  </a>
+
+  <span class="spacer"></span>
+
+  <!--We use tooltip.show() on click here just so the tooltip doesn't close on click (looks bad)-->
+  <button
+    matIconButton
+    #tooltip="matTooltip"
+    (click)="theme.cycle(); tooltip.show()"
+    [matTooltip]="theme.currentModeTranslateKey() | translate"
+  >
+    <mat-icon [svgIcon]="theme.currentModeIcon()"></mat-icon>
+  </button>
+  <button matIconButton [matTooltip]="'settings.language' | translate" (click)="openLanguageDialog()">
+    <mat-icon svgIcon="translate"></mat-icon>
+  </button>
+  <!--TODO make this open search bar-->
+  <a matIconButton href="https://www.google.com/" target="_blank" [matTooltip]="'search.search' | translate">
+    <mat-icon svgIcon="magnify"></mat-icon>
+  </a>
+  @if (isMobile()) {
+    <button matIconButton (click)="auth.signOut()" [matTooltip]="'user.logout' | translate">
+      <mat-icon svgIcon="logout"></mat-icon>
+    </button>
+  } @else {
+    <button matButton (click)="auth.signOut()">
+      <mat-icon svgIcon="logout"></mat-icon>
+      {{ "user.logout" | translate }}
+    </button>
+  }
+</mat-toolbar>
+
+<mat-sidenav-container>
+  <mat-sidenav #sidenav [opened]="!isMobile()" [mode]="isMobile() ? 'over' : 'side'">
+    <a id="user-box" routerLink="user/profile" routerLinkActive="active">
+      <img class="avatar" [src]="userAvatarURL()" alt="" />
+      <div class="name">{{ userName() }}</div>
+      <div class="fav-recipes">
+        <a matButton [routerLink]="userFavoritesLink()" class="small"
+          ><mat-icon svgIcon="heart"></mat-icon>{{ "user.favorite-recipes" | translate }}</a
+        >
+      </div>
+    </a>
+
+    <button matFab extended [matMenuTriggerFor]="createMenu" id="create-button">
+      <mat-icon svgIcon="plus"></mat-icon>
+      {{ "general.create" | translate }}
+    </button>
+    <mat-menu #createMenu="matMenu" class="high">
+      @for (link of createLinks; track link.title) {
+        <a mat-menu-item [routerLink]="link.path">
+          <mat-icon class="create-menu-icon" [svgIcon]="link.icon"></mat-icon>
+          <div class="create-menu-text">
+            <span>{{ link.title | translate }}</span>
+            <span class="create-subtitle">{{ link.subtitle | translate }}</span>
+          </div>
+        </a>
+      }
+    </mat-menu>
+
+    <mat-nav-list>
+      @for (link of topLinks; track link.title) {
+        <a mat-list-item [routerLink]="link.path" routerLinkActive="active">
+          <mat-icon matListItemIcon [svgIcon]="link.icon"></mat-icon>
+          <span matListItemTitle>{{ link.title | translate }}</span>
+        </a>
+      }
+
+      <mat-expansion-panel mat-list-item>
+        <mat-expansion-panel-header>
+          <mat-icon svgIcon="file-cabinet"></mat-icon>
+          <span>{{ "general.organizers" | translate }}</span>
+        </mat-expansion-panel-header>
+        @for (link of organizerLinks; track link.title) {
+          <a mat-list-item [routerLink]="link.path" routerLinkActive="active" role="listitem">
+            <mat-icon matListItemIcon [svgIcon]="link.icon"></mat-icon>
+            <span matListItemTitle>{{ link.title | translate }}</span>
+          </a>
+        }
+      </mat-expansion-panel>
+    </mat-nav-list>
+    <mat-divider />
+    <!-- TODO: Add cookbook links here -->
+    <mat-nav-list style="position: absolute; bottom: 0">
+      <!--TODO: Put settings and announcements here-->
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>
