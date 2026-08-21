@@ -4,11 +4,11 @@ import { DomSanitizer } from "@angular/platform-browser";
 
 import { MatIconRegistry } from "@angular/material/icon";
 
-import { ITranslateService, TranslateService } from "@ngx-translate/core";
-import { of } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 import { ThemeService } from "@theme/theme.service";
 
 import ThemeToggleButton from "./theme-toggle-button.component";
@@ -19,13 +19,6 @@ class ThemeServiceStub {
   cycle = vi.fn();
 }
 
-const fakeTranslate: Partial<ITranslateService> = {
-  currentLang: signal("en-US"),
-  instant: (key: string | string[]) => `[${key}]`,
-  get: (key: string | string[]) => of(`[${key}]`),
-  translate: () => signal(""),
-};
-
 describe("ThemeToggleButton", () => {
   let fixture: ComponentFixture<ThemeToggleButton>;
   let themeService: ThemeServiceStub;
@@ -35,7 +28,7 @@ describe("ThemeToggleButton", () => {
       imports: [ThemeToggleButton],
       providers: [
         { provide: ThemeService, useClass: ThemeServiceStub },
-        { provide: TranslateService, useValue: fakeTranslate as unknown as ITranslateService },
+        { provide: TranslateService, useValue: mockTranslateService },
         { provide: DomSanitizer, useValue: mockDomSanitizer },
       ],
     }).compileComponents();

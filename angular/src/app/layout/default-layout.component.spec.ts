@@ -11,13 +11,13 @@ import { MatDialog } from "@angular/material/dialog";
 import { MatIconRegistry } from "@angular/material/icon";
 import { MatSidenavHarness } from "@angular/material/sidenav/testing";
 
-import { ITranslateService, TranslateService } from "@ngx-translate/core";
-import { of } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
 import type { UserOut } from "@api/models/user-out";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockLocalStorage } from "@testing/local-storage.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 import { ThemeService } from "@theme/theme.service";
 
 import { AuthService } from "../auth/auth.service";
@@ -74,13 +74,6 @@ class ThemeServiceStub {
   cycle = vi.fn();
 }
 
-const fakeTranslate: Partial<ITranslateService> = {
-  currentLang: signal("en-US"),
-  instant: (key: string | string[]) => `[${key}]`,
-  get: (key: string | string[]) => of(`[${key}]`),
-  translate: () => signal(""),
-};
-
 class MediaMatcherStub {
   matchMedia() {
     return {
@@ -113,7 +106,7 @@ describe("DefaultLayout", () => {
         provideRouter([{ path: "**", component: TestHostComponent }]),
         { provide: AuthService, useClass: AuthServiceStub },
         { provide: ThemeService, useClass: ThemeServiceStub },
-        { provide: TranslateService, useValue: fakeTranslate as unknown as ITranslateService },
+        { provide: TranslateService, useValue: mockTranslateService },
         { provide: MediaMatcher, useClass: MediaMatcherStub },
         { provide: DomSanitizer, useValue: mockDomSanitizer },
         { provide: MatDialog, useClass: MatDialogStub },

@@ -1,15 +1,14 @@
-import { signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { DomSanitizer } from "@angular/platform-browser";
 
 import { MatDialog } from "@angular/material/dialog";
 import { MatIconRegistry } from "@angular/material/icon";
 
-import { ITranslateService, TranslateService } from "@ngx-translate/core";
-import { of } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import LanguageDialogComponent from "../locale/language-dialog.component";
 import LanguageButton from "./language-button.component";
@@ -17,13 +16,6 @@ import LanguageButton from "./language-button.component";
 class MatDialogStub {
   open = vi.fn();
 }
-
-const fakeTranslate: Partial<ITranslateService> = {
-  currentLang: signal("en-US"),
-  instant: (key: string | string[]) => `[${key}]`,
-  get: (key: string | string[]) => of(`[${key}]`),
-  translate: () => signal(""),
-};
 
 describe("LanguageButton", () => {
   let fixture: ComponentFixture<LanguageButton>;
@@ -34,7 +26,7 @@ describe("LanguageButton", () => {
       imports: [LanguageButton],
       providers: [
         { provide: MatDialog, useClass: MatDialogStub },
-        { provide: TranslateService, useValue: fakeTranslate as unknown as ITranslateService },
+        { provide: TranslateService, useValue: mockTranslateService },
         { provide: DomSanitizer, useValue: mockDomSanitizer },
       ],
     }).compileComponents();
