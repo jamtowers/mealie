@@ -175,12 +175,3 @@ dev/code-generation/openapi.json
 .task/*
 .dev.env
 frontend/eslint.config.deprecated.js
-
-
-# Git ignores for dev setup James uses but doesn't intend for upstream (at least at this point)
-# These lines should be removed before merging anything here to upstream
-
-.agents
-.zed
-AGENTS.md
-skills-lock.json
