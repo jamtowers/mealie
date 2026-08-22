@@ -178,7 +178,7 @@ frontend/eslint.config.deprecated.js
 
 
 # Git ignores for dev setup James uses but doesn't intend for upstream (at least at this point)
-# DO NOT COMMIT!!! If you see this in a repo somewhere go point and laugh at James for making that mistake
+# These lines should be removed before merging anything here to upstream
 
 .agents
 .zed
