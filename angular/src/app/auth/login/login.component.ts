@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, OnInit, inject, signal } from "@angular/core";
 import { FormField, form, required } from "@angular/forms/signals";
 import { Router } from "@angular/router";
 
@@ -13,7 +13,9 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
 import { TranslatePipe } from "@ngx-translate/core";
+import { firstValueFrom } from "rxjs";
 
+import { AppAboutService } from "@api/services/appAbout.service";
 import { SnackbarProvider } from "@theme/snackbar.provider";
 
 import { AuthService, SignInCredentials } from "../auth.service";
@@ -36,10 +38,17 @@ import { AuthService, SignInCredentials } from "../auth.service";
   templateUrl: "./login.component.html",
   styleUrl: "./login.component.scss",
 })
-export default class LoginComponent {
+export default class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly appAbout = inject(AppAboutService);
+
+  protected readonly isFirstLogin = signal(false);
+
+  // Default first-login credentials shown in the info banner
+  readonly defaultEmail = "changeme@example.com";
+  readonly defaultPassword = "MyPassword";
 
   protected readonly footerLinks = [
     {
@@ -72,6 +81,27 @@ export default class LoginComponent {
 
   protected readonly hidePassword = signal(true);
   protected readonly loading = signal(false);
+
+  ngOnInit(): void {
+    this.loadStartupInfo();
+  }
+
+  private async loadStartupInfo(): Promise<void> {
+    try {
+      const info = await firstValueFrom(this.appAbout.getStartupInfoApiAppAboutStartupInfoGet());
+      this.isFirstLogin.set(info.isFirstLogin);
+      if (info.isFirstLogin) {
+        // Set the form values to the default login and password
+        this.loginModel.update((m) => ({
+          ...m,
+          username: this.defaultEmail,
+          password: this.defaultPassword,
+        }));
+      }
+    } catch {
+      // Startup info fetch failed — silently continue without first-login UI
+    }
+  }
 
   handlePasswordToggle(event: MouseEvent): void {
     this.hidePassword.set(!this.hidePassword());

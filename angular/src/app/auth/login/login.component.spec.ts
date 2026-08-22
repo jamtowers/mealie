@@ -11,8 +11,9 @@ import { MatInputHarness } from "@angular/material/input/testing";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
 import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom, of } from "rxjs";
+import { firstValueFrom, of, throwError } from "rxjs";
 
+import { AppAboutService } from "@api/services/appAbout.service";
 import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
 import { UsersCRUDService } from "@api/services/usersCRUD.service";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
@@ -23,7 +24,17 @@ import { AuthService } from "../auth.service";
 // Import the component default export
 import LoginComponent from "./login.component";
 
-const SVG_ICONS = ["silverware-variant", "email", "lock", "eye-off", "eye", "heart", "github", "folder-outline"];
+const SVG_ICONS = [
+  "silverware-variant",
+  "email",
+  "lock",
+  "eye-off",
+  "eye",
+  "heart",
+  "github",
+  "folder-outline",
+  "information",
+];
 
 // ── Mock services ──
 
@@ -38,6 +49,10 @@ class MockRouter {
 
 class MockMatSnackBar {
   open = vi.fn();
+}
+
+class MockAppAboutService {
+  getStartupInfoApiAppAboutStartupInfoGet = vi.fn().mockReturnValue(of({ isFirstLogin: false }));
 }
 
 // ── API service mocks ──
@@ -61,6 +76,7 @@ async function createComponent(
     authService?: Partial<AuthService>;
     router?: Partial<Router>;
     snackBar?: Partial<MatSnackBar>;
+    appAbout?: Partial<AppAboutService>;
   } = {},
 ): Promise<ComponentFixture<LoginComponent>> {
   await TestBed.configureTestingModule({
@@ -69,6 +85,7 @@ async function createComponent(
       { provide: AuthService, useValue: overrides.authService ?? new MockAuthService() },
       { provide: Router, useValue: overrides.router ?? new MockRouter() },
       { provide: MatSnackBar, useValue: overrides.snackBar ?? new MockMatSnackBar() },
+      { provide: AppAboutService, useValue: overrides.appAbout ?? new MockAppAboutService() },
       provideTranslateService({ fallbackLang: "en-US" }),
       { provide: DomSanitizer, useValue: mockDomSanitizer },
       { provide: UsersAuthenticationService, useValue: mockAuthApi },
@@ -87,6 +104,9 @@ async function createComponent(
     "user.login": "Login",
     "user.hide-password": "Hide Password",
     "general.loading": "Loading",
+    "user.username": "Username",
+    "user.it-looks-like-this-is-your-first-time-logging-in": "First Time?",
+    "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email": "Change your email",
   });
   await firstValueFrom(translate.use("en-US"));
 
@@ -236,5 +256,80 @@ describe("LoginComponent", () => {
     const toggleBtn = fixture.nativeElement.querySelector("mat-form-field button[maticonbutton]");
     expect(toggleBtn.getAttribute("aria-pressed")).toBe("true");
     expect(toggleBtn.getAttribute("aria-label")).toBe("Hide Password");
+  });
+
+  it("should not show first-login banner when isFirstLogin is false", async () => {
+    const banner = fixture.nativeElement.querySelector("#banner-card");
+    expect(banner).toBeNull();
+  });
+
+  it("should NOT pre-fill form when isFirstLogin is false", async () => {
+    const [usernameHarness, passwordHarness] = await loader.getAllHarnesses(MatInputHarness);
+
+    expect(await usernameHarness.getValue()).toBe("");
+    expect(await passwordHarness.getValue()).toBe("");
+  });
+});
+
+describe("LoginComponent isFirstLogin", () => {
+  let firstLoginFixture: ComponentFixture<LoginComponent>;
+  let firstLoginLoader: HarnessLoader;
+
+  beforeEach(async () => {
+    firstLoginFixture = await createComponent({
+      appAbout: {
+        getStartupInfoApiAppAboutStartupInfoGet: vi.fn().mockReturnValue(of({ isFirstLogin: true })),
+      },
+    });
+    await firstLoginFixture.whenStable();
+    firstLoginLoader = TestbedHarnessEnvironment.loader(firstLoginFixture);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should show first-login banner when isFirstLogin is true", async () => {
+    const banner = firstLoginFixture.nativeElement.querySelector("#banner-card");
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain("changeme@example.com");
+    expect(banner.textContent).toContain("MyPassword");
+  });
+
+  it("should pre-fill form with default credentials when isFirstLogin is true", async () => {
+    const [usernameHarness, passwordHarness] = await firstLoginLoader.getAllHarnesses(MatInputHarness);
+
+    expect(await usernameHarness.getValue()).toBe("changeme@example.com");
+    expect(await passwordHarness.getValue()).toBe("MyPassword");
+  });
+});
+
+describe("LoginComponent isFirstLogin API Error", () => {
+  let errorFixture: ComponentFixture<LoginComponent>;
+  let errorLoader: HarnessLoader;
+
+  beforeEach(async () => {
+    errorFixture = await createComponent({
+      appAbout: {
+        getStartupInfoApiAppAboutStartupInfoGet: vi.fn().mockReturnValue(throwError(() => new Error("Network error"))),
+      },
+    });
+    await errorFixture.whenStable();
+    errorLoader = TestbedHarnessEnvironment.loader(errorFixture);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should gracefully handle startup info API failure and not show banner", async () => {
+    const banner = errorFixture.nativeElement.querySelector("#banner-card");
+    expect(banner).toBeNull();
+  });
+
+  it("should not pre-fill form on API failure", async () => {
+    const [usernameHarness, passwordHarness] = await errorLoader.getAllHarnesses(MatInputHarness);
+    expect(await usernameHarness.getValue()).toBe("");
+    expect(await passwordHarness.getValue()).toBe("");
   });
 });

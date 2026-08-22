@@ -1,0 +1,15 @@
+@use "@angular/material" as mat;
+
+// :root overrides every instance of card
+/* :root {
+  @include mat.card-overrides(());
+} */
+
+.secondary {
+  @include mat.card-overrides(
+    (
+      elevated-container-color: var(--mat-sys-tertiary-container),
+    )
+  );
+  color: var(--mat-sys-on-tertiary-container);
+}

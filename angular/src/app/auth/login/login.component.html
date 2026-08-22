@@ -1,4 +1,22 @@
-<mat-card appearance="outlined">
+@if (isFirstLogin()) {
+  <mat-card id="banner-card" class="secondary">
+    <mat-card-header>
+      <mat-icon mat-card-avatar svgIcon="information" />
+      <mat-card-title>{{ "user.it-looks-like-this-is-your-first-time-logging-in" | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>
+        <strong>{{ "user.username" | translate }}: </strong>{{ defaultEmail }}
+        <br />
+        <strong>{{ "user.password" | translate }}: </strong>{{ defaultPassword }}
+      </p>
+      <p>
+        {{ "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email" | translate }}
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+<mat-card id="login-card" appearance="outlined">
   <mat-card-header>
     <mat-card-title>Mealie</mat-card-title>
   </mat-card-header>

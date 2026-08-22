@@ -53,7 +53,7 @@ This is a list of features I want to add that didn't exist in the original vue a
 - [x] Email/password login with "Remember Me" (`pages/login.vue`)
 - [ ] OIDC (OpenID Connect) integration and callback handling
 - [x] Session persistence and auto-redirect to default activity
-- [ ] First-time login detection (shows default credentials banner)
+- [x] First-time login detection (shows default credentials banner)
 - [x] Token cookie management (`use-token-cookie.ts`)
   - Replaced with localStorage handling instead, see design decisions above
 - [x] Sign out

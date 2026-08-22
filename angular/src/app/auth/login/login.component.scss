@@ -2,12 +2,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 32px);
+  min-height: calc(100vh - 32px);
   flex-direction: column;
   padding: 16px;
+  gap: 16px;
 }
 
-mat-card {
+#login-card {
   width: 100%;
   max-width: 500px;
   & > mat-divider {
@@ -27,35 +28,34 @@ mat-card {
     background-color: var(--brand-color);
     color: var(--color-on-brand);
   }
-}
-
-mat-card-header {
-  background-color: var(--brand-color);
-  color: white;
-  border-radius: var(--mat-sys-corner-medium) var(--mat-sys-corner-medium) 0 0;
-  justify-content: center;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
-}
-
-mat-card-content > form {
-  display: flex;
-  flex-direction: column;
-  & > h2 {
-    text-align: center;
+  mat-card-header {
+    background-color: var(--brand-color);
+    color: white;
+    border-radius: var(--mat-sys-corner-medium) var(--mat-sys-corner-medium) 0 0;
+    justify-content: center;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
   }
-  .mdc-icon-button {
+
+  mat-card-content > form {
     display: flex;
+    flex-direction: column;
+    & > h2 {
+      text-align: center;
+    }
+    .mdc-icon-button {
+      display: flex;
+    }
+
+    & > button[type="submit"] {
+      margin: 16px 0;
+    }
   }
 
-  & > button[type="submit"] {
-    margin: 16px 0;
+  mat-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
   }
-}
-
-mat-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
 }
