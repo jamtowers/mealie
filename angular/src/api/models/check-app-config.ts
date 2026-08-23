@@ -10,7 +10,9 @@
 export interface CheckAppConfig {
     emailReady: boolean;
     ldapReady: boolean;
+    ldapDisabled: boolean;
     oidcReady: boolean;
+    oidcDisabled: boolean;
     baseUrlSet: boolean;
     isUpToDate: boolean;
 }

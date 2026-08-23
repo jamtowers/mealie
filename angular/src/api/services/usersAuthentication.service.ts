@@ -93,11 +93,19 @@ export class UsersAuthenticationService {
         });
     }
 
-    oauthCallbackApiAuthOauthCallbackGet(observe?: 'body', options?: RequestOptions<'json'>): Observable<MealieAuthToken>;
-    oauthCallbackApiAuthOauthCallbackGet(observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<MealieAuthToken>>;
-    oauthCallbackApiAuthOauthCallbackGet(observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<MealieAuthToken>>;
-    oauthCallbackApiAuthOauthCallbackGet(observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    oauthCallbackApiAuthOauthCallbackGet(code?: any, state?: any, observe?: 'body', options?: RequestOptions<'json'>): Observable<MealieAuthToken>;
+    oauthCallbackApiAuthOauthCallbackGet(code?: any, state?: any, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<MealieAuthToken>>;
+    oauthCallbackApiAuthOauthCallbackGet(code?: any, state?: any, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<MealieAuthToken>>;
+    oauthCallbackApiAuthOauthCallbackGet(code?: any, state?: any, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/auth/oauth/callback`;
+
+        let params = new HttpParams();
+        if (code != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, code, 'code');
+        }
+        if (state != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, state, 'state');
+        }
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {
@@ -113,6 +121,7 @@ export class UsersAuthenticationService {
         return this.httpClient.request('get', url, {
             observe,
             headers,
+            params,
             reportProgress: options?.reportProgress,
             withCredentials: options?.withCredentials,
             context: this.createContextWithClientId(options?.context)

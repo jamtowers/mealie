@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -117,7 +117,13 @@ async def oauth_login(request: Request):
 
 
 @public_router.get("/oauth/callback", response_model=MealieAuthToken)
-async def oauth_callback(request: Request, session: Session = Depends(generate_session)):
+async def oauth_callback(
+    request: Request,
+    session: Session = Depends(generate_session),
+    # Declared for the OpenAPI spec (and thus generated clients); authlib reads them from request.args directly
+    code: str | None = Query(None),
+    state: str | None = Query(None),
+):
     if not oauth:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
