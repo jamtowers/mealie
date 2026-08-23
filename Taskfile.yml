@@ -68,11 +68,21 @@ tasks:
       - playwright.config.ts
       - pnpm-lock.yaml
 
+  setup:angular:
+    desc: setup angular dependencies
+    dir: angular
+    cmds:
+      - pnpm install
+    sources:
+      - package.json
+      - pnpm-lock.yaml
+
   setup:
     desc: setup all dependencies
     deps:
       - setup:ui
       - setup:py
+      - setup:angular
 
   dev:generate:
     desc: run code generators
@@ -358,38 +368,35 @@ tasks:
       - task: e2e:test
         vars: { PREVENT_REPORT_OPEN: true }
 
-  angular:setup:
-    desc: setup angular dependencies
-    dir: angular
-    cmds:
-      - pnpm install
-    sources:
-      - package.json
-      - pnpm-lock.yaml
-
   angular:
     desc: runs the angular frontend dev server
     dir: angular
     cmds:
-      - ng serve --port 3001
+      - pnpm run start --port 3001
 
   angular:build:
     desc: builds the angular ui in angular/dist
     dir: angular
     cmds:
-      - ng build --configuration production
+      - pnpm run build --configuration production
+
+  angular:generate:
+    desc: generates the API client from the backend's OpenAPI spec (requires the backend running via task py)
+    dir: angular
+    cmds:
+      - pnpm run generate:api
 
   angular:lint:
     desc: runs the angular linter
     dir: angular
     cmds:
-      - ng lint
+      - pnpm run lint
 
   angular:test:
     desc: runs the angular tests
     dir: angular
     cmds:
-      - ng test --watch=false
+      - pnpm run test --no-watch
 
   angular:check:
     desc: runs all angular checks
