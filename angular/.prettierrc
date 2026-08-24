@@ -13,7 +13,7 @@
     "^@angular/((?!material).*)$",
     "^@angular/material(.*)$",
     "<THIRD_PARTY_MODULES>",
-    "^@(app|api|testing|theme)/(.*)$",
+    "^@(app|api|testing|theme|utils)/(.*)$",
     "^[./]"
   ],
   "importOrderSeparation": true,

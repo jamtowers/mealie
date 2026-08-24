@@ -3,17 +3,24 @@ import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { Router, provideRouter } from "@angular/router";
 
+import { MatSnackBar } from "@angular/material/snack-bar";
+
+import { TranslateService } from "@ngx-translate/core";
 import { of, throwError } from "rxjs";
+import type { Mock } from "vitest";
 
 import type { UserOut } from "@api/models/user-out";
 import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
 import { UsersCRUDService } from "@api/services/usersCRUD.service";
+import { BASE_PATH_DEFAULT } from "@api/tokens";
 import { mockLocalStorage } from "@testing/local-storage.mock";
 import { mockLocation } from "@testing/location.mock";
 
-import { AuthService, type SignInCredentials } from "./auth.service";
+import { AuthService, PENDING_REDIRECT_STORAGE_KEY, type SignInCredentials } from "./auth.service";
 
 const TOKEN_STORAGE_KEY = "mealie.access_token";
+
+const originalUrl = window.location.href;
 
 // Target for the catch-all route so navigations performed by the service
 // (signOut, 401 redirects) resolve instead of failing with NG04002.
@@ -54,6 +61,8 @@ describe("AuthService", () => {
   let refreshRequest: ReturnType<typeof vi.spyOn>;
   let logoutRequest: ReturnType<typeof vi.spyOn>;
   let selfRequest: ReturnType<typeof vi.spyOn>;
+  let oauthCallbackRequest: ReturnType<typeof vi.spyOn>;
+  let snackBarOpen: Mock<(message: string, action?: string, options?: object) => void>;
 
   // Each test injects a fresh AuthService and its constructor registers a
   // window "storage" listener that is never torn down. We capture the
@@ -65,6 +74,7 @@ describe("AuthService", () => {
   beforeEach(async () => {
     mockLocalStorage();
     localStorage.clear();
+    sessionStorage.clear();
     tokenRequest = vi
       .spyOn(UsersAuthenticationService.prototype, "getTokenApiAuthTokenPost")
       .mockReturnValue(of({ access_token: "new-token" }) as never);
@@ -77,8 +87,12 @@ describe("AuthService", () => {
     selfRequest = vi
       .spyOn(UsersCRUDService.prototype, "getLoggedInUserApiUsersSelfGet")
       .mockReturnValue(of(createMockUser()) as never);
+    oauthCallbackRequest = vi
+      .spyOn(UsersAuthenticationService.prototype, "oauthCallbackApiAuthOauthCallbackGet")
+      .mockReturnValue(of({ access_token: "oidc-token" }) as never);
     // HttpClient is only needed so the (mocked) api services can be instantiated
     vi.spyOn(HttpClient.prototype, "request").mockReturnValue(of({}) as never);
+    snackBarOpen = vi.fn();
 
     const originalAddEventListener = window.addEventListener.bind(window);
     let capturedStorageListener: EventListener | null = null;
@@ -97,7 +111,12 @@ describe("AuthService", () => {
       providers: [
         // Catch-all route so router navigations inside the service resolve.
         provideRouter([{ path: "**", component: StubComponent }]),
+        // Same as app.config.ts — URLs are built relative to the page origin
+        { provide: BASE_PATH_DEFAULT, useValue: "" },
         provideHttpClient(),
+        // The service shows snackbar messages itself, keyed by translation id
+        { provide: MatSnackBar, useValue: { open: snackBarOpen } },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
         AuthService,
       ],
     }).compileComponents();
@@ -118,6 +137,7 @@ describe("AuthService", () => {
   afterEach(() => {
     removeStorageListener();
     removeStorageListener = () => undefined;
+    window.history.replaceState({}, "", originalUrl);
     vi.restoreAllMocks();
   });
 
@@ -211,6 +231,91 @@ describe("AuthService", () => {
       expect(authService.getToken()).toBeNull();
       expect(authService.status$()).toBe("unauthenticated");
       expect(selfRequest).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("oauthSignIn", () => {
+    beforeEach(() => {
+      window.history.replaceState({}, "", "/login?code=abc&state=xyz");
+    });
+
+    it("should trade the callback code for a token and load the session", async () => {
+      await authService.oauthSignIn();
+
+      expect(oauthCallbackRequest).toHaveBeenCalledWith("abc", "xyz");
+      expect(authService.getToken()).toBe("oidc-token");
+      expect(selfRequest).toHaveBeenCalledTimes(1);
+      expect(authService.status$()).toBe("authenticated");
+      expect(authService.user$()).toEqual(createMockUser());
+      expect(snackBarOpen).not.toHaveBeenCalled();
+    });
+
+    it("should rethrow the error and mark the session unauthenticated when the callback fails", async () => {
+      oauthCallbackRequest.mockReturnValue(throwError(() => createHttpError(401)));
+
+      await expect(authService.oauthSignIn()).rejects.toBeInstanceOf(Error);
+
+      expect(authService.getToken()).toBeNull();
+      expect(authService.status$()).toBe("unauthenticated");
+      expect(selfRequest).not.toHaveBeenCalled();
+    });
+
+    it("should show an invalid credentials snackbar when the callback fails with 401", async () => {
+      oauthCallbackRequest.mockReturnValue(throwError(() => createHttpError(401)));
+
+      await expect(authService.oauthSignIn()).rejects.toBeInstanceOf(Error);
+
+      expect(snackBarOpen).toHaveBeenCalledWith("user.invalid-credentials", "Close", {
+        panelClass: "error",
+      });
+    });
+
+    it("should show an account locked snackbar when the callback fails with 423", async () => {
+      oauthCallbackRequest.mockReturnValue(throwError(() => createHttpError(423)));
+
+      await expect(authService.oauthSignIn()).rejects.toBeInstanceOf(Error);
+
+      expect(snackBarOpen).toHaveBeenCalledWith("user.account-locked-please-try-again-later", "Close", {
+        panelClass: "error",
+      });
+    });
+
+    it("should show a generic error snackbar for other callback failures", async () => {
+      oauthCallbackRequest.mockReturnValue(throwError(() => createHttpError(500)));
+
+      await expect(authService.oauthSignIn()).rejects.toBeInstanceOf(Error);
+
+      expect(snackBarOpen).toHaveBeenCalledWith("events.something-went-wrong", "Close", {
+        panelClass: "error",
+      });
+    });
+  });
+
+  describe("startOidcFlow", () => {
+    it("should snapshot the current page as the pending redirect before leaving the app", () => {
+      const assign = vi.fn();
+      vi.spyOn(window, "location", "get").mockReturnValue({
+        href: "http://localhost/recipes?tag=pie",
+        assign,
+      } as unknown as Location);
+
+      authService.startOidcFlow();
+
+      expect(sessionStorage.getItem(PENDING_REDIRECT_STORAGE_KEY)).toBe("/recipes?tag=pie");
+      expect(assign).toHaveBeenCalledWith("/api/auth/oauth");
+    });
+
+    it("should not snapshot a pending redirect when already on /login", () => {
+      const assign = vi.fn();
+      vi.spyOn(window, "location", "get").mockReturnValue({
+        href: "http://localhost/login",
+        assign,
+      } as unknown as Location);
+
+      authService.startOidcFlow();
+
+      expect(sessionStorage.getItem(PENDING_REDIRECT_STORAGE_KEY)).toBeNull();
+      expect(assign).toHaveBeenCalledWith("/api/auth/oauth");
     });
   });
 

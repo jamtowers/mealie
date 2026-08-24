@@ -47,8 +47,17 @@
       display: flex;
     }
 
-    & > button[type="submit"] {
+    & > button {
       margin: 16px 0;
+    }
+
+    #or-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      mat-divider {
+        flex: 1;
+      }
     }
   }
 

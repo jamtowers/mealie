@@ -1,13 +1,15 @@
 import { Routes } from "@angular/router";
 
-import { authGuard, unauthGuard } from "./auth/auth.guard";
+import { authGuard } from "./auth/auth.guard";
+import { loginGuard } from "./auth/login/login.guard";
 
 export const routes: Routes = [
   // ── Public (unauthenticated) routes ─────────────────────────────
   {
     path: "login",
     loadComponent: () => import("./auth/login/login.component"),
-    canActivate: [unauthGuard],
+    // Handles the OIDC callback and re-routes authenticated users away
+    canActivate: [loginGuard],
     data: { title: "user.login" },
   },
 

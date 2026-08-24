@@ -1,13 +1,22 @@
+import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
 
+import { MatSnackBar } from "@angular/material/snack-bar";
+
+import { TranslateService } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
 
 import type { UserOut } from "@api/models/user-out";
 import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
 import { UsersCRUDService } from "@api/services/usersCRUD.service";
+import { BASE_PATH_DEFAULT } from "@api/tokens";
 
 const TOKEN_STORAGE_KEY = "mealie.access_token";
+
+// Read/consumed by the login guard, which is the only place pending redirects
+// are ever read — kept here next to the writer
+export const PENDING_REDIRECT_STORAGE_KEY = "mealie.pending_redirect";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -20,8 +29,11 @@ export interface SignInCredentials {
 @Injectable({ providedIn: "root" })
 export class AuthService {
   private readonly router = inject(Router);
+  private readonly basePath = inject(BASE_PATH_DEFAULT);
   private readonly authApi = inject(UsersAuthenticationService);
   private readonly usersApi = inject(UsersCRUDService);
+  private readonly translate = inject(TranslateService);
+  private readonly snackBar = inject(MatSnackBar);
 
   private readonly user = signal<UserOut | null>(null);
   private readonly status = signal<AuthStatus>("loading");
@@ -84,6 +96,64 @@ export class AuthService {
       this.status.set("unauthenticated");
       throw error;
     }
+  }
+
+  /**
+   * Finish the OIDC flow: trade the `code`/`state` query params the provider
+   * redirected us back with for a Mealie token, then load the session.
+   *
+   * The backend's authlib client validates `state` against the one it issued,
+   * so both params are forwarded verbatim.
+   */
+  async oauthSignIn(): Promise<void> {
+    this.status.set("loading");
+
+    try {
+      const search = new URLSearchParams(window.location.search);
+      const response = await firstValueFrom(
+        this.authApi.oauthCallbackApiAuthOauthCallbackGet(
+          search.get("code") ?? undefined,
+          search.get("state") ?? undefined,
+        ),
+      );
+
+      this.setToken(response.access_token);
+      await this.getSession();
+    } catch (error: HttpErrorResponse | unknown) {
+      this.status.set("unauthenticated");
+      this.snackBar.open(this.oidcErrorMessage(error), "Close", { panelClass: "error" });
+      throw error;
+    }
+  }
+
+  private oidcErrorMessage(error: HttpErrorResponse | unknown): string {
+    const status =
+      error && typeof error === "object" && "status" in error ? (error as HttpErrorResponse).status : undefined;
+
+    switch (status) {
+      case 401:
+        return this.translate.instant("user.invalid-credentials");
+      case 423:
+        return this.translate.instant("user.account-locked-please-try-again-later");
+      default:
+        return this.translate.instant("events.something-went-wrong");
+    }
+  }
+
+  /**
+   * Kick off the OIDC flow.
+   *
+   * The provider round trip is a full page load that lands on the backend's
+   * fixed `<base>/login` callback, so whatever page was behind the login
+   * screen is lost from the URL — snapshot it here, then leave the app.
+   */
+  startOidcFlow(): void {
+    const url = new URL(window.location.href);
+    if (url.pathname !== "/login") {
+      this.setPendingRedirect(url.pathname + url.search);
+    }
+
+    window.location.assign(`${this.basePath}/api/auth/oauth`);
   }
 
   /**
@@ -171,6 +241,14 @@ export class AuthService {
   private resetState(): void {
     this.user.set(null);
     this.status.set("unauthenticated");
+  }
+
+  private setPendingRedirect(target: string): void {
+    try {
+      sessionStorage.setItem(PENDING_REDIRECT_STORAGE_KEY, target);
+    } catch {
+      // sessionStorage may be unavailable in some environments
+    }
   }
 
   private handleAuthError(error: unknown, redirect = false): void {

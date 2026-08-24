@@ -26,39 +26,65 @@
     <form (submit)="onSubmit($event)">
       <h2>{{ "user.sign-in" | translate }}</h2>
 
-      <mat-form-field>
-        <mat-label>{{ "user.email-or-username" | translate }}</mat-label>
-        <input matInput [formField]="loginForm.username" />
-        <mat-icon matTextPrefix svgIcon="email" />
-      </mat-form-field>
+      @if (allowPasswordLogin()) {
+        <mat-form-field>
+          <mat-label>{{ "user.email-or-username" | translate }}</mat-label>
+          <input matInput [formField]="loginForm.username" />
+          <mat-icon matTextPrefix svgIcon="email" />
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>{{ "user.password" | translate }}</mat-label>
-        <input matInput [formField]="loginForm.password" [type]="hidePassword() ? 'password' : 'text'" />
-        <mat-icon matTextPrefix svgIcon="lock" />
-        <button
-          matIconButton
-          matSuffix
-          type="button"
-          (click)="handlePasswordToggle($event)"
-          [attr.aria-label]="'user.hide-password' | translate"
-          [attr.aria-pressed]="hidePassword()"
-        >
-          <mat-icon [svgIcon]="hidePassword() ? 'eye-off' : 'eye'"></mat-icon>
+        <mat-form-field>
+          <mat-label>{{ "user.password" | translate }}</mat-label>
+          <input
+            matInput
+            [formField]="loginForm.password"
+            [type]="hidePassword() ? 'password' : 'text'"
+          />
+          <mat-icon matTextPrefix svgIcon="lock" />
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            (click)="handlePasswordToggle($event)"
+            [attr.aria-label]="'user.hide-password' | translate"
+            [attr.aria-pressed]="hidePassword()"
+          >
+            <mat-icon [svgIcon]="hidePassword() ? 'eye-off' : 'eye'"></mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-checkbox [formField]="loginForm.rememberMe">{{ "user.remember-me" | translate }}</mat-checkbox>
+
+        <button matButton="filled" type="submit" [showProgress]="loading()">
+          {{ "user.login" | translate }}
+          <mat-progress-spinner
+            progressIndicator
+            mode="indeterminate"
+            diameter="20"
+            [attr.aria-label]="'general.loading' | translate"
+          />
         </button>
-      </mat-form-field>
+      }
 
-      <mat-checkbox [formField]="loginForm.rememberMe">{{ "user.remember-me" | translate }}</mat-checkbox>
+      @if (enableOidc() && allowPasswordLogin()) {
+        <div id="or-divider">
+          <mat-divider />
+          <span>{{ "user.or" | translate }}</span>
+          <mat-divider />
+        </div>
+      }
 
-      <button matButton="filled" type="submit" [showProgress]="loading()">
-        {{ "user.login" | translate }}
-        <mat-progress-spinner
-          progressIndicator
-          mode="indeterminate"
-          diameter="20"
-          [attr.aria-label]="'general.loading' | translate"
-        />
-      </button>
+      @if (enableOidc()) {
+        <button matButton="filled" type="button" [showProgress]="loading()" (click)="handleOidcLogin()">
+          {{ "user.login-oidc" | translate }} {{ oidcProviderName() }}
+          <mat-progress-spinner
+            progressIndicator
+            mode="indeterminate"
+            diameter="20"
+            [attr.aria-label]="'general.loading' | translate"
+          />
+        </button>
+      }
     </form>
     <!-- TODO: register and forgot password buttons -->
   </mat-card-content>
@@ -66,7 +92,7 @@
     @for (link of footerLinks; track link.text) {
       <a matButton [href]="link.href" target="_blank" class="on-surface">
         <mat-icon [svgIcon]="link.icon"></mat-icon>
-        {{ link.text }}
+        {{ link.text | translate }}
       </a>
     }
   </mat-card-footer>

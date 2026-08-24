@@ -11,14 +11,15 @@ import { MatInputHarness } from "@angular/material/input/testing";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
 import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom, of, throwError } from "rxjs";
+import { firstValueFrom, of } from "rxjs";
+import type { Mock } from "vitest";
 
-import { AppAboutService } from "@api/services/appAbout.service";
+import type { AppInfo } from "@api/models/app-info";
 import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
 import { UsersCRUDService } from "@api/services/usersCRUD.service";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
-import { SnackbarProvider } from "@theme/snackbar.provider";
+import { AppInfoService } from "@utils/app-info.service";
 
 import { AuthService } from "../auth.service";
 // Import the component default export
@@ -40,6 +41,7 @@ const SVG_ICONS = [
 
 class MockAuthService {
   signIn = vi.fn().mockResolvedValue(undefined as void);
+  startOidcFlow = vi.fn();
 }
 
 class MockRouter {
@@ -51,8 +53,13 @@ class MockMatSnackBar {
   open = vi.fn();
 }
 
-class MockAppAboutService {
-  getStartupInfoApiAppAboutStartupInfoGet = vi.fn().mockReturnValue(of({ isFirstLogin: false }));
+class MockAppInfoService {
+  info$: Mock<() => AppInfo | null> = vi.fn(() => null);
+  // Mirror the real service: derived lazily from the settled signals with safe defaults
+  allowPasswordLogin$ = vi.fn(() => this.info$()?.allowPasswordLogin ?? true);
+  enableOidc$ = vi.fn(() => this.info$()?.enableOidc ?? false);
+  oidcProviderName$ = vi.fn(() => this.info$()?.oidcProviderName ?? "");
+  isFirstLogin$ = vi.fn(() => false);
 }
 
 // ── API service mocks ──
@@ -73,10 +80,10 @@ const mockUsersApi = {
 
 async function createComponent(
   overrides: {
-    authService?: Partial<AuthService>;
+    authService?: MockAuthService;
     router?: Partial<Router>;
     snackBar?: Partial<MatSnackBar>;
-    appAbout?: Partial<AppAboutService>;
+    appInfo?: MockAppInfoService;
   } = {},
 ): Promise<ComponentFixture<LoginComponent>> {
   await TestBed.configureTestingModule({
@@ -85,12 +92,11 @@ async function createComponent(
       { provide: AuthService, useValue: overrides.authService ?? new MockAuthService() },
       { provide: Router, useValue: overrides.router ?? new MockRouter() },
       { provide: MatSnackBar, useValue: overrides.snackBar ?? new MockMatSnackBar() },
-      { provide: AppAboutService, useValue: overrides.appAbout ?? new MockAppAboutService() },
+      { provide: AppInfoService, useValue: overrides.appInfo ?? new MockAppInfoService() },
       provideTranslateService({ fallbackLang: "en-US" }),
       { provide: DomSanitizer, useValue: mockDomSanitizer },
       { provide: UsersAuthenticationService, useValue: mockAuthApi },
       { provide: UsersCRUDService, useValue: mockUsersApi },
-      SnackbarProvider,
     ],
   }).compileComponents();
 
@@ -107,6 +113,14 @@ async function createComponent(
     "user.username": "Username",
     "user.it-looks-like-this-is-your-first-time-logging-in": "First Time?",
     "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email": "Change your email",
+    "user.or": "or",
+    "user.login-oidc": "Login with",
+    "user.invalid-credentials": "Invalid Credentials",
+    "user.account-locked-please-try-again-later": "Account locked, please try again later",
+    "events.something-went-wrong": "Something went wrong",
+    "about.sponsor": "Sponsor",
+    "about.github": "GitHub",
+    "about.docs": "Docs",
   });
   await firstValueFrom(translate.use("en-US"));
 
@@ -126,6 +140,21 @@ async function fillForm(loader: HarnessLoader, fixture: ComponentFixture<LoginCo
   await passwordHarness.setValue("pass");
 
   await fixture.whenStable();
+}
+
+function mockAppInfo(overrides: Partial<AppInfo> = {}): AppInfo {
+  return {
+    production: false,
+    version: "1.0.0",
+    demoStatus: false,
+    allowSignup: true,
+    allowPasswordLogin: true,
+    enableOidc: false,
+    oidcRedirect: false,
+    oidcProviderName: "Test Provider",
+    tokenTime: 3600,
+    ...overrides,
+  };
 }
 
 // ── Tests ──
@@ -269,6 +298,10 @@ describe("LoginComponent", () => {
     expect(await usernameHarness.getValue()).toBe("");
     expect(await passwordHarness.getValue()).toBe("");
   });
+
+  it("should not render an oidc button by default", () => {
+    expect(fixture.nativeElement.querySelector('button[matButton="filled"][type="button"]')).toBeNull();
+  });
 });
 
 describe("LoginComponent isFirstLogin", () => {
@@ -276,11 +309,9 @@ describe("LoginComponent isFirstLogin", () => {
   let firstLoginLoader: HarnessLoader;
 
   beforeEach(async () => {
-    firstLoginFixture = await createComponent({
-      appAbout: {
-        getStartupInfoApiAppAboutStartupInfoGet: vi.fn().mockReturnValue(of({ isFirstLogin: true })),
-      },
-    });
+    const appInfo = new MockAppInfoService();
+    appInfo.isFirstLogin$ = vi.fn(() => true);
+    firstLoginFixture = await createComponent({ appInfo });
     await firstLoginFixture.whenStable();
     firstLoginLoader = TestbedHarnessEnvironment.loader(firstLoginFixture);
   });
@@ -304,32 +335,69 @@ describe("LoginComponent isFirstLogin", () => {
   });
 });
 
-describe("LoginComponent isFirstLogin API Error", () => {
-  let errorFixture: ComponentFixture<LoginComponent>;
-  let errorLoader: HarnessLoader;
+describe("LoginComponent OIDC", () => {
+  let fixture: ComponentFixture<LoginComponent>;
+  let loader: HarnessLoader;
+  let authService: MockAuthService;
 
   beforeEach(async () => {
-    errorFixture = await createComponent({
-      appAbout: {
-        getStartupInfoApiAppAboutStartupInfoGet: vi.fn().mockReturnValue(throwError(() => new Error("Network error"))),
-      },
-    });
-    await errorFixture.whenStable();
-    errorLoader = TestbedHarnessEnvironment.loader(errorFixture);
+    const appInfo = new MockAppInfoService();
+    appInfo.info$ = vi.fn<() => AppInfo | null>(() =>
+      mockAppInfo({ enableOidc: true, oidcProviderName: "My Provider" }),
+    );
+    fixture = await createComponent({ appInfo });
+    loader = TestbedHarnessEnvironment.loader(fixture);
+    authService = TestBed.inject(AuthService) as unknown as MockAuthService;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("should gracefully handle startup info API failure and not show banner", async () => {
-    const banner = errorFixture.nativeElement.querySelector("#banner-card");
-    expect(banner).toBeNull();
+  it("should render the oidc button with the provider name", () => {
+    const button = fixture.nativeElement.querySelector(
+      'button[matButton="filled"][type="button"]',
+    ) as HTMLButtonElement;
+    expect(button.textContent).toContain("Login with");
+    expect(button.textContent).toContain("My Provider");
   });
 
-  it("should not pre-fill form on API failure", async () => {
-    const [usernameHarness, passwordHarness] = await errorLoader.getAllHarnesses(MatInputHarness);
-    expect(await usernameHarness.getValue()).toBe("");
-    expect(await passwordHarness.getValue()).toBe("");
+  it("should render the or divider between the password form and the oidc button", () => {
+    expect(fixture.nativeElement.querySelector("#or-divider")).not.toBeNull();
+  });
+
+  it("should start the oidc flow when the oidc button is clicked", async () => {
+    const oidcButton = await loader.getHarness(
+      MatButtonHarness.with({ selector: 'button[matButton="filled"][type="button"]' }),
+    );
+    await oidcButton.click();
+
+    expect(authService.startOidcFlow).toHaveBeenCalledOnce();
+  });
+});
+
+describe("LoginComponent app info", () => {
+  it("should hide the password form when password login is disabled", async () => {
+    const appInfo = new MockAppInfoService();
+    appInfo.info$ = vi.fn<() => AppInfo | null>(() => mockAppInfo({ allowPasswordLogin: false, enableOidc: false }));
+    const fixture = await createComponent({ appInfo });
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+
+    expect(await loader.getAllHarnesses(MatInputHarness)).toHaveLength(0);
+    expect(await loader.getAllHarnesses(MatCheckboxHarness)).toHaveLength(0);
+  });
+
+  it("should show only the oidc button when password login is disabled but oidc is enabled", async () => {
+    const appInfo = new MockAppInfoService();
+    appInfo.info$ = vi.fn<() => AppInfo | null>(() => mockAppInfo({ allowPasswordLogin: false, enableOidc: true }));
+    const fixture = await createComponent({ appInfo });
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+
+    expect(await loader.getAllHarnesses(MatInputHarness)).toHaveLength(0);
+    expect(fixture.nativeElement.querySelector("#or-divider")).toBeNull();
+    const oidcButton = await loader.getHarness(
+      MatButtonHarness.with({ selector: 'button[matButton="filled"][type="button"]' }),
+    );
+    expect(oidcButton).toBeTruthy();
   });
 });

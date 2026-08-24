@@ -13,10 +13,8 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
 import { TranslatePipe } from "@ngx-translate/core";
-import { firstValueFrom } from "rxjs";
 
-import { AppAboutService } from "@api/services/appAbout.service";
-import { SnackbarProvider } from "@theme/snackbar.provider";
+import { AppInfoService } from "@utils/app-info.service";
 
 import { AuthService, SignInCredentials } from "../auth.service";
 
@@ -34,7 +32,7 @@ import { AuthService, SignInCredentials } from "../auth.service";
     FormField,
     TranslatePipe,
   ],
-  providers: [SnackbarProvider],
+  providers: [],
   templateUrl: "./login.component.html",
   styleUrl: "./login.component.scss",
 })
@@ -42,9 +40,12 @@ export default class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly appAbout = inject(AppAboutService);
+  private readonly appInfoService = inject(AppInfoService);
 
-  protected readonly isFirstLogin = signal(false);
+  protected readonly isFirstLogin = this.appInfoService.isFirstLogin$;
+  protected readonly allowPasswordLogin = this.appInfoService.allowPasswordLogin$;
+  protected readonly enableOidc = this.appInfoService.enableOidc$;
+  protected readonly oidcProviderName = this.appInfoService.oidcProviderName$;
 
   // Default first-login credentials shown in the info banner
   readonly defaultEmail = "changeme@example.com";
@@ -52,17 +53,17 @@ export default class LoginComponent implements OnInit {
 
   protected readonly footerLinks = [
     {
-      text: "Sponsor",
+      text: "about.sponsor",
       icon: "heart",
       href: "https://github.com/sponsors/hay-kot",
     },
     {
-      text: "GitHub",
+      text: "about.github",
       icon: "github",
       href: "https://github.com/mealie-recipes/mealie",
     },
     {
-      text: "Docs",
+      text: "about.docs",
       icon: "folder-outline",
       href: "https://docs.mealie.io/",
     },
@@ -83,29 +84,25 @@ export default class LoginComponent implements OnInit {
   protected readonly loading = signal(false);
 
   ngOnInit(): void {
-    this.loadStartupInfo();
-  }
-
-  private async loadStartupInfo(): Promise<void> {
-    try {
-      const info = await firstValueFrom(this.appAbout.getStartupInfoApiAppAboutStartupInfoGet());
-      this.isFirstLogin.set(info.isFirstLogin);
-      if (info.isFirstLogin) {
-        // Set the form values to the default login and password
-        this.loginModel.update((m) => ({
-          ...m,
-          username: this.defaultEmail,
-          password: this.defaultPassword,
-        }));
-      }
-    } catch {
-      // Startup info fetch failed — silently continue without first-login UI
+    // Settled during app bootstrap, so it's populated by the time we get here
+    if (this.isFirstLogin()) {
+      // Set the form values to the default login and password
+      this.loginModel.update((m) => ({
+        ...m,
+        username: this.defaultEmail,
+        password: this.defaultPassword,
+      }));
     }
   }
 
   handlePasswordToggle(event: MouseEvent): void {
     this.hidePassword.set(!this.hidePassword());
     event.stopPropagation();
+  }
+
+  handleOidcLogin(): void {
+    this.loading.set(true);
+    this.authService.startOidcFlow();
   }
 
   async onSubmit(event: Event): Promise<void> {

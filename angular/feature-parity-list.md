@@ -32,6 +32,8 @@ This list isn't isn't exhaustive (I'm not going to list every built in angular f
 - The theme change and language change buttons are now in the top right of the toolbar to give them more visibility (I can be convinced to put them back)
 - The vue app is largely uses type based directory structure, components are under one directory, pages in another, etc, etc, The Angular app is area based, so code that is related is close to eachother, there is a more specific
 - Local Storage is used over cookies, this means any user config, session info, etc stored in cookies won't carry over to the new front end and vice versa
+- I have put the app name at the start of the page title (e.g. `Mealie - Login` rather than just `Login`), I could be convinced the other way around is the right option (e.g. `Login - Mealie`) but I don't have any strong preferences myself
+  - This is important for those who are mainly reading their tabs for whatever reason (e.g. somebody who relies on a screenreader)
 
 ### New translation keys needed
 
@@ -51,7 +53,7 @@ This is a list of features I want to add that didn't exist in the original vue a
 ### Sign In / Sign Out
 
 - [x] Email/password login with "Remember Me" (`pages/login.vue`)
-- [ ] OIDC (OpenID Connect) integration and callback handling
+- [x] OIDC (OpenID Connect) integration and callback handling
 - [x] Session persistence and auto-redirect to default activity
 - [x] First-time login detection (shows default credentials banner)
 - [x] Token cookie management (`use-token-cookie.ts`)

@@ -18,7 +18,6 @@ import {
   householdGuard,
   manageGuard,
   organizeGuard,
-  unauthGuard,
 } from "./auth.guard";
 import { AuthService } from "./auth.service";
 
@@ -77,46 +76,6 @@ describe("authGuard", () => {
     const result = TestBed.runInInjectionContext(() => authGuard(mockRoute, mockState));
     expect(result).toBe(false);
     expect(console.warn).toHaveBeenCalledWith("Tried navigating while auth state is getting resolved, ignoring.");
-  });
-});
-
-describe("unauthGuard", () => {
-  let status$: Mock<() => "loading" | "authenticated" | "unauthenticated">;
-  let parseUrl: Mock<(url: string) => UrlTree>;
-
-  beforeEach(() => {
-    status$ = vi.fn(() => "loading");
-    parseUrl = vi.fn(() => ({}) as unknown as UrlTree);
-
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: AuthService,
-          useValue: { status$, user$: vi.fn() },
-        },
-        { provide: Router, useValue: { parseUrl } },
-      ],
-    });
-  });
-
-  it("should redirect to / when authenticated", () => {
-    status$.mockReturnValue("authenticated");
-    const homeUrl = {} as UrlTree;
-    parseUrl.mockReturnValue(homeUrl);
-    const result = TestBed.runInInjectionContext(() => unauthGuard(mockRoute, mockState));
-    expect(result).toBe(homeUrl);
-  });
-
-  it("should allow navigation when unauthenticated", () => {
-    status$.mockReturnValue("unauthenticated");
-    const result = TestBed.runInInjectionContext(() => unauthGuard(mockRoute, mockState));
-    expect(result).toBe(true);
-  });
-
-  it("should allow navigation when loading", () => {
-    status$.mockReturnValue("loading");
-    const result = TestBed.runInInjectionContext(() => unauthGuard(mockRoute, mockState));
-    expect(result).toBe(true);
   });
 });
 

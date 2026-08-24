@@ -9,11 +9,14 @@ import {
 import { provideRouter } from "@angular/router";
 import { provideServiceWorker } from "@angular/service-worker";
 
+import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from "@angular/material/snack-bar";
+
 import { provideTranslateParser, provideTranslateService } from "@ngx-translate/core";
 import { provideTranslateHttpLoader } from "@ngx-translate/http-loader";
 
 import { provideDefaultClient } from "@api/providers";
 import { ThemeService } from "@theme/theme.service";
+import { AppInfoService } from "@utils/app-info.service";
 
 import { routes } from "./app.routes";
 import { authInterceptor } from "./auth/auth.interceptor";
@@ -28,6 +31,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAppInitializer(async () => {
       await inject(AuthService).initialize();
+    }),
+    // Fetch app info (OIDC/password-login availability) so guards and the
+    // login page see settled info before the first render
+    provideAppInitializer(async () => {
+      await inject(AppInfoService).initialize();
     }),
     provideDefaultClient({
       basePath: "",
@@ -51,5 +59,9 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       inject(ThemeService).initialize();
     }),
+    {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
+      useValue: { duration: 2500, verticalPosition: "top" },
+    },
   ],
 };

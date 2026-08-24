@@ -34,27 +34,6 @@ export const authGuard: CanActivateFn = (/* route: ActivatedRouteSnapshot, state
 };
 
 /**
- * Redirects authenticated users away from page.
- * Namely the login page -> home page.
- */
-export const unauthGuard: CanActivateFn = (/* _route: ActivatedRouteSnapshot, _state: RouterStateSnapshot */) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
-
-  switch (authService.status$()) {
-    case "authenticated":
-      return router.parseUrl("/");
-
-    // If the user is unauthenticated or the login state is getting resolved
-    // we allow the route
-    case "unauthenticated":
-    case "loading":
-    default:
-      return true;
-  }
-};
-
-/**
  * Blocks non-admin users from admin routes.
  */
 export const adminGuard: CanActivateFn = (/* _route: ActivatedRouteSnapshot, _state: RouterStateSnapshot */) => {
