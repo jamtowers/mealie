@@ -49,11 +49,11 @@ src/app/
 | `@api/*`     | `src/api/*`     |
 | `@testing/*` | `src/testing/*` |
 | `@theme/*`   | `src/theme/*`   |
+| `@utils/*`   | `src/utils/*`   |
 
 ```ts
-import { authGuard } from "@app/auth/auth.guard";
-
 import { RecipeCRUDService } from "@api/services";
+import { authGuard } from "@app/auth/auth.guard";
 ```
 
 **Rules:**
@@ -90,9 +90,9 @@ Angular Material theme configuration and component overrides. Lives outside `src
 
 Static files served at the root: `favicon.ico`, `manifest.webmanifest`, icons, and locale translation files (`lang/`).
 
-### Planned: `src/utils/`
+### `src/utils/` — Utility Files
 
-A future `utils/` directory (resolvable via `@utils` path alias) for truly application-wide utilities that don't belong to any single feature: shared pipes, base classes, global services, etc.
+Utilities directory for truly application-wide utilities that don't belong to any single feature: shared pipes, base classes, global services, etc. Use sparingly.
 
 ## Adding a New Feature
 
