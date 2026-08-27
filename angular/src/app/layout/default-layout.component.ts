@@ -14,9 +14,9 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 
 import { TranslatePipe } from "@ngx-translate/core";
 
-import { AuthService } from "../auth/auth.service";
-import LanguageButton from "../core/language-button.component";
-import ThemeToggleButton from "../core/theme-toggle-button.component";
+import { AuthService } from "@app/auth/auth.service";
+import LanguageButton from "@app/core/language-button.component";
+import ThemeToggleButton from "@app/core/theme-toggle-button.component";
 
 interface Link {
   icon: string;

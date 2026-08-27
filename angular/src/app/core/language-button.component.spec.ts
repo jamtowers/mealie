@@ -6,11 +6,11 @@ import { MatIconRegistry } from "@angular/material/icon";
 
 import { TranslateService } from "@ngx-translate/core";
 
+import LanguageDialogComponent from "@app/locale/language-dialog.component";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
 import { mockTranslateService } from "@testing/translate-service.mock";
 
-import LanguageDialogComponent from "../locale/language-dialog.component";
 import LanguageButton from "./language-button.component";
 
 class MatDialogStub {

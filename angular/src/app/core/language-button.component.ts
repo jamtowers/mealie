@@ -7,7 +7,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 
 import { TranslatePipe } from "@ngx-translate/core";
 
-import LanguageDialogComponent from "../locale/language-dialog.component";
+import LanguageDialogComponent from "@app/locale/language-dialog.component";
 
 @Component({
   selector: "mealie-language-button",

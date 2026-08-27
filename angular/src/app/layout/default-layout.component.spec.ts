@@ -14,13 +14,13 @@ import { MatSidenavHarness } from "@angular/material/sidenav/testing";
 import { TranslateService } from "@ngx-translate/core";
 
 import type { UserOut } from "@api/models/user-out";
+import { AuthService } from "@app/auth/auth.service";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockLocalStorage } from "@testing/local-storage.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
 import { mockTranslateService } from "@testing/translate-service.mock";
 import { ThemeService } from "@theme/theme.service";
 
-import { AuthService } from "../auth/auth.service";
 import DefaultLayout from "./default-layout.component";
 
 const DEFAULT_LAYOUT_ICONS = [
