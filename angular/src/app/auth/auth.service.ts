@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { Injectable, inject, signal } from "@angular/core";
+import { INJECTOR, Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
 
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -32,7 +32,12 @@ export class AuthService {
   private readonly basePath = inject(BASE_PATH_DEFAULT);
   private readonly authApi = inject(UsersAuthenticationService);
   private readonly usersApi = inject(UsersCRUDService);
-  private readonly translate = inject(TranslateService);
+  // TranslateService is resolved lazily (see `translate` below): the root
+  // TranslateService synchronously loads its fallback language inside its
+  // constructor (fallbackLang in app.config.ts), and that load goes through
+  // authInterceptor -> inject(AuthService). Injecting it here would re-enter
+  // this constructor (NG0200 circular dependency).
+  private readonly injector = inject(INJECTOR);
   private readonly snackBar = inject(MatSnackBar);
 
   private readonly user = signal<UserOut | null>(null);
@@ -236,7 +241,12 @@ export class AuthService {
     }
   }
 
-  // ── Internal helpers ────────────────────────────────────────────
+  // ── Internal helpers ──────────────────────────────────────────────
+
+  /** Lazy access — see the `injector` field above for why this is not `inject(TranslateService)`. */
+  private get translate(): TranslateService {
+    return this.injector.get(TranslateService);
+  }
 
   private resetState(): void {
     this.user.set(null);
