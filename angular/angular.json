@@ -82,7 +82,6 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverage": true,
             "coverageExclude": ["api/*", "testing/*"]
           }
         },
