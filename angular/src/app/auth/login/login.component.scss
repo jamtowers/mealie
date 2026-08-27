@@ -1,16 +1,12 @@
-:host {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 32px);
-  flex-direction: column;
-  padding: 16px;
-  gap: 16px;
+#banner-card > mat-card-header > mat-icon {
+  margin-bottom: 0;
+  height: 32px;
+  width: 32px;
 }
 
-#login-card {
-  width: 100%;
-  max-width: 500px;
+#header-body-barrier {
+  margin: 16px 0;
+  position: relative;
   & > mat-divider {
     margin: 40px 0 60px;
   }
@@ -18,8 +14,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    /* Top is to get this below the card header, if the header height changes this ought to be changed too */
-    top: 72px;
+    top: 0;
     margin-inline: auto;
     height: 84px;
     width: 84px;
@@ -28,43 +23,59 @@
     background-color: var(--brand-color);
     color: var(--color-on-brand);
   }
-  mat-card-header {
-    background-color: var(--brand-color);
-    color: white;
-    border-radius: var(--mat-sys-corner-medium) var(--mat-sys-corner-medium) 0 0;
-    justify-content: center;
-    padding-bottom: 12px;
-    margin-bottom: 16px;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+
+  & > h2,
+  p {
+    margin-top: 0;
+    text-align: center;
   }
 
-  mat-card-content > form {
+  & > button {
+    margin: 16px 0;
+  }
+
+  & > span {
     display: flex;
-    flex-direction: column;
-    & > h2 {
-      text-align: center;
-    }
-    .mdc-icon-button {
-      display: flex;
-    }
-
-    & > button {
-      margin: 16px 0;
-    }
-
-    #or-divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      mat-divider {
-        flex: 1;
-      }
-    }
+    justify-content: center;
+    gap: 8px;
   }
 
-  mat-card-footer {
+  #or-divider {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 16px;
+    gap: 12px;
+
+    mat-divider {
+      flex: 1;
+    }
+  }
+}
+
+form {
+  display: contents;
+  a {
+    align-self: center;
+  }
+
+  & > button {
+    margin: 16px 0;
+  }
+}
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8px;
+
+  /* Manual adjustment of documenation icon as it looks larger than the others in the footer */
+  & > a > mat-icon[data-mat-icon-name="file-document-multiple-outline"] {
+    width: 1rem;
+    height: 1rem;
   }
 }

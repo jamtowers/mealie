@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from "@angular/core";
-import { FormField, form, required } from "@angular/forms/signals";
-import { Router } from "@angular/router";
+import { FormField, form, required, submit } from "@angular/forms/signals";
+import { Router, RouterModule } from "@angular/router";
 
 import { MatButtonModule } from "@angular/material/button";
 import { MatCardModule } from "@angular/material/card";
@@ -14,13 +14,18 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 
 import { TranslatePipe } from "@ngx-translate/core";
 
+import { HiddenInputComponent } from "@app/core/hidden-input.component";
 import { AppInfoService } from "@utils/app-info.service";
+import { ValidationErrorDirective } from "@utils/validation-error.directive";
 
+import AuthShellComponent from "../auth-shell/auth-shell.component";
 import { AuthService, SignInCredentials } from "../auth.service";
 
 @Component({
   selector: "mealie-login",
   imports: [
+    AuthShellComponent,
+    HiddenInputComponent,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -30,7 +35,9 @@ import { AuthService, SignInCredentials } from "../auth.service";
     MatInputModule,
     MatProgressSpinnerModule,
     FormField,
+    RouterModule,
     TranslatePipe,
+    ValidationErrorDirective,
   ],
   providers: [],
   templateUrl: "./login.component.html",
@@ -46,6 +53,7 @@ export default class LoginComponent implements OnInit {
   protected readonly allowPasswordLogin = this.appInfoService.allowPasswordLogin$;
   protected readonly enableOidc = this.appInfoService.enableOidc$;
   protected readonly oidcProviderName = this.appInfoService.oidcProviderName$;
+  protected readonly allowSignup = this.appInfoService.allowSignup$;
 
   // Default first-login credentials shown in the info banner
   readonly defaultEmail = "changeme@example.com";
@@ -64,7 +72,7 @@ export default class LoginComponent implements OnInit {
     },
     {
       text: "about.docs",
-      icon: "folder-outline",
+      icon: "file-document-multiple-outline",
       href: "https://docs.mealie.io/",
     },
   ];
@@ -80,7 +88,6 @@ export default class LoginComponent implements OnInit {
     required(schemaPath.password);
   });
 
-  protected readonly hidePassword = signal(true);
   protected readonly loading = signal(false);
 
   ngOnInit(): void {
@@ -95,11 +102,6 @@ export default class LoginComponent implements OnInit {
     }
   }
 
-  handlePasswordToggle(event: MouseEvent): void {
-    this.hidePassword.set(!this.hidePassword());
-    event.stopPropagation();
-  }
-
   handleOidcLogin(): void {
     this.loading.set(true);
     this.authService.startOidcFlow();
@@ -108,24 +110,27 @@ export default class LoginComponent implements OnInit {
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
 
-    try {
-      await this.authService.signIn(this.loginModel());
+    // The action only runs when the form is valid, which also marks it touched
+    await submit(this.loginForm, async () => {
+      try {
+        await this.authService.signIn(this.loginModel());
 
-      // If we're on the login page navigate to the root page
-      // If we're not it means we got here from the auth guard which keeps the original path in the browser url
-      // So we can just re-navigate to get to where the user originally intended
-      const browserPath = new URL(window.location.href).pathname;
-      if (browserPath === "/login") {
-        await this.router.navigate(["/"]);
-      } else {
-        await this.router.navigateByUrl(browserPath, {
-          skipLocationChange: true, // Skip adding location to history, makes for clean forward/back navigation
+        // If we're on the login page navigate to the root page
+        // If we're not it means we got here from the auth guard which keeps the original path in the browser url
+        // So we can just re-navigate to get to where the user originally intended
+        const browserPath = new URL(window.location.href).pathname;
+        if (browserPath === "/login") {
+          await this.router.navigate(["/"]);
+        } else {
+          await this.router.navigateByUrl(browserPath, {
+            skipLocationChange: true, // Skip adding location to history, makes for clean forward/back navigation
+          });
+        }
+      } catch {
+        this.snackBar.open("Invalid Credentials", "Close", {
+          panelClass: "error",
         });
       }
-    } catch {
-      this.snackBar.open("Invalid Credentials", "Close", {
-        panelClass: "error",
-      });
-    }
+    });
   }
 }

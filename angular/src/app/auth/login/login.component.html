@@ -1,57 +1,38 @@
-@if (isFirstLogin()) {
-  <mat-card id="banner-card" class="secondary">
-    <mat-card-header>
-      <mat-icon mat-card-avatar svgIcon="information" />
-      <mat-card-title>{{ "user.it-looks-like-this-is-your-first-time-logging-in" | translate }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <p>
-        <strong>{{ "user.username" | translate }}: </strong>{{ defaultEmail }}
-        <br />
-        <strong>{{ "user.password" | translate }}: </strong>{{ defaultPassword }}
-      </p>
-      <p>
-        {{ "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email" | translate }}
-      </p>
-    </mat-card-content>
-  </mat-card>
-}
-<mat-card id="login-card" appearance="outlined">
-  <mat-card-header>
-    <mat-card-title>Mealie</mat-card-title>
-  </mat-card-header>
-  <mat-divider />
-  <mat-icon svgIcon="silverware-variant" />
-  <mat-card-content>
-    <form (submit)="onSubmit($event)">
-      <h2>{{ "user.sign-in" | translate }}</h2>
-
-      @if (allowPasswordLogin()) {
+<mealie-auth-shell>
+  @if (isFirstLogin()) {
+    <mat-card id="banner-card" class="secondary">
+      <mat-card-header>
+        <mat-icon mat-card-avatar svgIcon="information" />
+        <mat-card-title>{{ "user.it-looks-like-this-is-your-first-time-logging-in" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          <strong>{{ "user.username" | translate }}: </strong>{{ defaultEmail }}
+          <br />
+          <strong>{{ "user.password" | translate }}: </strong>{{ defaultPassword }}
+        </p>
+        <p>
+          {{ "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email" | translate }}
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+  <div id="header-body-barrier">
+    <mat-divider />
+    <mat-icon svgIcon="silverware-variant" />
+  </div>
+  <main>
+    <h2>{{ "user.sign-in" | translate }}</h2>
+    @if (allowPasswordLogin()) {
+      <form (submit)="onSubmit($event)">
         <mat-form-field>
           <mat-label>{{ "user.email-or-username" | translate }}</mat-label>
           <input matInput [formField]="loginForm.username" />
           <mat-icon matTextPrefix svgIcon="email" />
+          <mat-error mealieValidationError [field]="loginForm.username" />
         </mat-form-field>
 
-        <mat-form-field>
-          <mat-label>{{ "user.password" | translate }}</mat-label>
-          <input
-            matInput
-            [formField]="loginForm.password"
-            [type]="hidePassword() ? 'password' : 'text'"
-          />
-          <mat-icon matTextPrefix svgIcon="lock" />
-          <button
-            matIconButton
-            matSuffix
-            type="button"
-            (click)="handlePasswordToggle($event)"
-            [attr.aria-label]="'user.hide-password' | translate"
-            [attr.aria-pressed]="hidePassword()"
-          >
-            <mat-icon [svgIcon]="hidePassword() ? 'eye-off' : 'eye'"></mat-icon>
-          </button>
-        </mat-form-field>
+        <mealie-hidden-input [formField]="loginForm.password" label="user.password" />
 
         <mat-checkbox [formField]="loginForm.rememberMe">{{ "user.remember-me" | translate }}</mat-checkbox>
 
@@ -64,36 +45,45 @@
             [attr.aria-label]="'general.loading' | translate"
           />
         </button>
-      }
+      </form>
+    }
+    @if (enableOidc() && allowPasswordLogin()) {
+      <div id="or-divider">
+        <mat-divider />
+        <span>{{ "user.or" | translate }}</span>
+        <mat-divider />
+      </div>
+    }
 
-      @if (enableOidc() && allowPasswordLogin()) {
-        <div id="or-divider">
-          <mat-divider />
-          <span>{{ "user.or" | translate }}</span>
-          <mat-divider />
-        </div>
-      }
-
-      @if (enableOidc()) {
-        <button matButton="filled" type="button" [showProgress]="loading()" (click)="handleOidcLogin()">
-          {{ "user.login-oidc" | translate }} {{ oidcProviderName() }}
-          <mat-progress-spinner
-            progressIndicator
-            mode="indeterminate"
-            diameter="20"
-            [attr.aria-label]="'general.loading' | translate"
-          />
-        </button>
-      }
-    </form>
-    <!-- TODO: register and forgot password buttons -->
-  </mat-card-content>
-  <mat-card-footer>
+    @if (enableOidc()) {
+      <button matButton="filled" type="button" [showProgress]="loading()" (click)="handleOidcLogin()">
+        {{ "user.login-oidc" | translate }} {{ oidcProviderName() }}
+        <mat-progress-spinner
+          progressIndicator
+          mode="indeterminate"
+          diameter="20"
+          [attr.aria-label]="'general.loading' | translate"
+        />
+      </button>
+    }
+    @if (allowPasswordLogin()) {
+      <span>
+        @if (allowSignup()) {
+          <a matButton [routerLink]="['/register']">{{ "user.register" | translate }}</a>
+        }
+        <a matButton [routerLink]="['/forgot-password']">{{ "user.forgot-password" | translate }}</a>
+      </span>
+    }
+    @if (!allowPasswordLogin() && !enableOidc()) {
+      <p>{{ "user.no-login-method" | translate }}</p>
+    }
+  </main>
+  <footer>
     @for (link of footerLinks; track link.text) {
       <a matButton [href]="link.href" target="_blank" class="on-surface">
         <mat-icon [svgIcon]="link.icon"></mat-icon>
         {{ link.text | translate }}
       </a>
     }
-  </mat-card-footer>
-</mat-card>
+  </footer>
+</mealie-auth-shell>

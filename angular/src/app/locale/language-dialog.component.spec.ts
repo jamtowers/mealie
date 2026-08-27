@@ -16,6 +16,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatInputHarness } from "@angular/material/input/testing";
 
 import { TranslateService, provideTranslateService } from "@ngx-translate/core";
+import { Subject } from "rxjs";
 import { vi } from "vitest";
 
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
@@ -74,13 +75,19 @@ async function createComponent(): Promise<{
   fixture: ComponentFixture<LanguageDialogComponent>;
   localeService: LocaleService;
   dialogRef: MatDialogRef<LanguageDialogComponent>;
+  beforeClosed: Subject<void>;
 }> {
+  const beforeClosed = new Subject<void>();
+
   await TestBed.configureTestingModule({
     imports: [MatAutocompleteModule, MatDialogModule, MatIconModule, MatInputModule, LanguageDialogComponent],
     providers: [
       { provide: LocaleService, useClass: MockLocaleService },
       { provide: TranslateService, useClass: MockTranslateService },
-      { provide: MatDialogRef, useValue: { close: vi.fn() } },
+      {
+        provide: MatDialogRef,
+        useValue: { close: vi.fn(), beforeClosed: vi.fn(() => beforeClosed.asObservable()) },
+      },
       provideTranslateService({ fallbackLang: "en-US" }),
       { provide: DomSanitizer, useValue: mockDomSanitizer },
     ],
@@ -94,7 +101,7 @@ async function createComponent(): Promise<{
   const localeService = TestBed.inject(LocaleService) as unknown as LocaleService;
   const dialogRef = TestBed.inject(MatDialogRef);
 
-  return { fixture, localeService, dialogRef };
+  return { fixture, localeService, dialogRef, beforeClosed };
 }
 
 describe("LanguageDialogComponent", () => {
@@ -103,6 +110,7 @@ describe("LanguageDialogComponent", () => {
   let loader: HarnessLoader;
   let localeService: MockLocaleService;
   let dialogRef: MatDialogRef<LanguageDialogComponent>;
+  let beforeClosed: Subject<void>;
 
   beforeEach(async () => {
     const setup = await createComponent();
@@ -112,6 +120,7 @@ describe("LanguageDialogComponent", () => {
     loader = TestbedHarnessEnvironment.loader(fixture);
     localeService = TestBed.inject(LocaleService) as unknown as MockLocaleService;
     dialogRef = setup.dialogRef;
+    beforeClosed = setup.beforeClosed;
   });
 
   describe("initial state", () => {
@@ -255,6 +264,31 @@ describe("LanguageDialogComponent", () => {
 
       expect(dialogRef.close).toHaveBeenCalled();
       expect(component["query"]()).toBe(newLocale.name);
+    });
+  });
+
+  describe("isClosing", () => {
+    it("is set when the dialog starts closing", () => {
+      expect(component["isClosing"]()).toBe(false);
+
+      beforeClosed.next(undefined);
+
+      expect(component["isClosing"]()).toBe(true);
+    });
+
+    it("closes the panel instead of reopening it while the dialog is closing", async () => {
+      await fixture.whenStable();
+
+      // Prime the panel so this is not the first open
+      componentAccess(component).onPanelOpened(createMockTrigger());
+      await fixture.whenStable();
+
+      beforeClosed.next(undefined);
+
+      const trigger = createMockTrigger();
+      componentAccess(component).onPanelOpened(trigger);
+
+      expect(trigger.closePanel).toHaveBeenCalled();
     });
   });
 

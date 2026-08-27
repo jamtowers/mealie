@@ -1,0 +1,26 @@
+<ng-content select="#banner-card" />
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <header>
+      <div>
+        @if (backButton()) {
+          <!-- Routes back to root path, for most users this will bring them back to the login page -->
+          <!-- For logged in users this will bring them to their home page if they're on one of these pages for whatever reason -->
+          <a matIconButton routerLink="/" [matTooltip]="'general.back' | translate">
+            <mat-icon svgIcon="arrow-left"></mat-icon>
+          </a>
+        }
+      </div>
+      <mat-card-title>Mealie</mat-card-title>
+      <div>
+        <mealie-language-button />
+        <mealie-theme-toggle-button />
+      </div>
+    </header>
+  </mat-card-header>
+  <ng-content select="#header-body-barrier" />
+  <mat-card-content>
+    <ng-content select="main" />
+    <ng-content select="footer" />
+  </mat-card-content>
+</mat-card>

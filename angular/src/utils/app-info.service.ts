@@ -33,16 +33,12 @@ export class AppInfoService {
   readonly enableOidc$ = computed(() => this.info()?.enableOidc ?? false);
   readonly oidcProviderName$ = computed(() => this.info()?.oidcProviderName ?? "");
   readonly isFirstLogin$ = computed(() => this.startupInfo()?.isFirstLogin ?? false);
+  readonly allowSignup$ = computed(() => this.info()?.allowSignup ?? false);
 
   private initialized = false;
 
   /**
-   * Fetches the app info and startup info in parallel. Idempotent — extra
-   * calls are ignored.
-   *
-   * Failures are swallowed independently: a failed fetch keeps its signal
-   * null, so consumers fall back to safe defaults (password form visible,
-   * no OIDC button, no first-login banner).
+   * Fetches the app info and startup info in parallel.
    */
   async initialize(): Promise<void> {
     if (this.initialized) {

@@ -22,6 +22,7 @@ This list isn't isn't exhaustive (I'm not going to list every built in angular f
 - RTL languages don't render the UI properly currently, Will fix this before calling this done
 - I've got no pipelines setup for this, if this ever does go into upstream they should be setup for linting/testing and maybe code gen steps
 - There are going to be meta things I've missed since they're scattered across the application, the ones I know of are: pwa settings, webmanifest (I have one defined but the backend is supplying one so I either need to align my app to work with that or align them)
+- No "Invite Only" message on login page when signups are disabled, this is an opinionated choice from me and I could be convinced to add it back, though in my humble opinion it clutters the UI for little gain
 
 ### Design decisions
 
@@ -34,11 +35,13 @@ This list isn't isn't exhaustive (I'm not going to list every built in angular f
 - Local Storage is used over cookies, this means any user config, session info, etc stored in cookies won't carry over to the new front end and vice versa
 - I have put the app name at the start of the page title (e.g. `Login | Mealie` rather than just `Login`)
   - This is important for those who are mainly reading their tabs for whatever reason (e.g. somebody who relies on a screenreader)
+- Unauthed login adjacent pages now share a shell with the login of the card with a header that has a few app controls on it
 
 ### New translation keys needed
 
-- `user.hide-password` - Used for aria label for hide password button but doesn't exist on the translation list as of writing
+- `user.hide-password` - Used for aria label for hide password button
 - `settings.theme.auto-mode` - used on the tooltip when the theme is on auto mode
+- `user.no-login-method` - Used when the user has misconfigured their Mealie and all the login methods are disabled
 
 ### New features I'm yet to add
 
@@ -62,9 +65,9 @@ This is a list of features I want to add that didn't exist in the original vue a
 
 ### Password Recovery
 
-- [ ] Forgot password flow (`pages/forgot-password.vue`)
-- [ ] Reset password flow (`pages/reset-password.vue`)
-- [ ] Password strength validation (`use-passwords.ts`, `UserPasswordStrength.vue`)
+- [x] Forgot password flow (`pages/forgot-password.vue`)
+- [x] Reset password flow (`pages/reset-password.vue`)
+- [x] Password strength validation (`use-passwords.ts`, `UserPasswordStrength.vue`)
 
 ### Registration & Group Joining
 

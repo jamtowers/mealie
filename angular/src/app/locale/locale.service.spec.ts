@@ -43,6 +43,7 @@ describe("LocaleService", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe("initialization", () => {

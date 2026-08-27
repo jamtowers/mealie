@@ -66,6 +66,7 @@ describe("AppInfoService", () => {
     expect(appInfoService.allowPasswordLogin$()).toBe(true);
     expect(appInfoService.enableOidc$()).toBe(false);
     expect(appInfoService.oidcProviderName$()).toBe("");
+    expect(appInfoService.allowSignup$()).toBe(false);
     expect(appInfoService.startupInfo$()).toBeNull();
     expect(appInfoService.isFirstLogin$()).toBe(false);
   });
@@ -75,6 +76,7 @@ describe("AppInfoService", () => {
 
     expect(getAppInfo).toHaveBeenCalledOnce();
     expect(appInfoService.info$()).toEqual(mockAppInfo());
+    expect(appInfoService.allowSignup$()).toBe(true);
   });
 
   it("should only fetch once, even when initialize is called again", async () => {
@@ -97,7 +99,14 @@ describe("AppInfoService", () => {
 
   it("should expose the fetched values through the derived signals", async () => {
     getAppInfo.mockReturnValue(
-      of(mockAppInfo({ allowPasswordLogin: false, enableOidc: true, oidcProviderName: "My Provider" })) as never,
+      of(
+        mockAppInfo({
+          allowPasswordLogin: false,
+          enableOidc: true,
+          oidcProviderName: "My Provider",
+          allowSignup: false,
+        }),
+      ) as never,
     );
 
     await appInfoService.initialize();
@@ -105,6 +114,7 @@ describe("AppInfoService", () => {
     expect(appInfoService.allowPasswordLogin$()).toBe(false);
     expect(appInfoService.enableOidc$()).toBe(true);
     expect(appInfoService.oidcProviderName$()).toBe("My Provider");
+    expect(appInfoService.allowSignup$()).toBe(false);
   });
 
   it("should store the fetched startup info and expose isFirstLogin through the derived signal", async () => {

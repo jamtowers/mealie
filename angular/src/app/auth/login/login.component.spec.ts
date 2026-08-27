@@ -2,7 +2,7 @@ import { HarnessLoader } from "@angular/cdk/testing";
 import { TestbedHarnessEnvironment } from "@angular/cdk/testing/testbed";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { DomSanitizer } from "@angular/platform-browser";
-import { Router } from "@angular/router";
+import { Router, provideRouter } from "@angular/router";
 
 import { MatButtonHarness } from "@angular/material/button/testing";
 import { MatCheckboxHarness } from "@angular/material/checkbox/testing";
@@ -18,6 +18,7 @@ import type { AppInfo } from "@api/models/app-info";
 import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
 import { UsersCRUDService } from "@api/services/usersCRUD.service";
 import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
+import { mockLocalStorage } from "@testing/local-storage.mock";
 import { mockSvgIcons } from "@testing/mock-icons.mock";
 import { AppInfoService } from "@utils/app-info.service";
 
@@ -33,8 +34,10 @@ const SVG_ICONS = [
   "eye",
   "heart",
   "github",
-  "folder-outline",
   "information",
+  "translate",
+  "theme-light-dark",
+  "file-document-multiple-outline",
 ];
 
 // ── Mock services ──
@@ -42,11 +45,6 @@ const SVG_ICONS = [
 class MockAuthService {
   signIn = vi.fn().mockResolvedValue(undefined as void);
   startOidcFlow = vi.fn();
-}
-
-class MockRouter {
-  navigate = vi.fn().mockResolvedValue(true);
-  navigateByUrl = vi.fn().mockResolvedValue(true);
 }
 
 class MockMatSnackBar {
@@ -59,6 +57,7 @@ class MockAppInfoService {
   allowPasswordLogin$ = vi.fn(() => this.info$()?.allowPasswordLogin ?? true);
   enableOidc$ = vi.fn(() => this.info$()?.enableOidc ?? false);
   oidcProviderName$ = vi.fn(() => this.info$()?.oidcProviderName ?? "");
+  allowSignup$ = vi.fn(() => this.info$()?.allowSignup ?? false);
   isFirstLogin$ = vi.fn(() => false);
 }
 
@@ -81,16 +80,19 @@ const mockUsersApi = {
 async function createComponent(
   overrides: {
     authService?: MockAuthService;
-    router?: Partial<Router>;
     snackBar?: Partial<MatSnackBar>;
     appInfo?: MockAppInfoService;
   } = {},
 ): Promise<ComponentFixture<LoginComponent>> {
+  // The auth shell renders the theme toggle, whose root service reads localStorage
+  mockLocalStorage();
+
   await TestBed.configureTestingModule({
     imports: [],
     providers: [
+      // Real router infrastructure (Router, ActivatedRoute, RouterLink dependencies)
+      provideRouter([]),
       { provide: AuthService, useValue: overrides.authService ?? new MockAuthService() },
-      { provide: Router, useValue: overrides.router ?? new MockRouter() },
       { provide: MatSnackBar, useValue: overrides.snackBar ?? new MockMatSnackBar() },
       { provide: AppInfoService, useValue: overrides.appInfo ?? new MockAppInfoService() },
       provideTranslateService({ fallbackLang: "en-US" }),
@@ -114,6 +116,7 @@ async function createComponent(
     "user.it-looks-like-this-is-your-first-time-logging-in": "First Time?",
     "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email": "Change your email",
     "user.or": "or",
+    "validators.required": "This Field is Required",
     "user.login-oidc": "Login with",
     "user.invalid-credentials": "Invalid Credentials",
     "user.account-locked-please-try-again-later": "Account locked, please try again later",
@@ -121,6 +124,8 @@ async function createComponent(
     "about.sponsor": "Sponsor",
     "about.github": "GitHub",
     "about.docs": "Docs",
+    "user.register": "Register",
+    "user.forgot-password": "Forgot Password",
   });
   await firstValueFrom(translate.use("en-US"));
 
@@ -164,7 +169,7 @@ describe("LoginComponent", () => {
   let component: LoginComponent;
   let loader: HarnessLoader;
   let authService: MockAuthService;
-  let router: MockRouter;
+  let router: Router;
   let snackBar: MockMatSnackBar;
 
   beforeEach(async () => {
@@ -172,7 +177,10 @@ describe("LoginComponent", () => {
     component = fixture.componentInstance;
     loader = TestbedHarnessEnvironment.loader(fixture);
     authService = TestBed.inject(AuthService) as unknown as MockAuthService;
-    router = TestBed.inject(Router) as unknown as MockRouter;
+    // Stub the navigation methods on the real router so tests assert without navigating
+    router = TestBed.inject(Router);
+    vi.spyOn(router, "navigate").mockResolvedValue(true);
+    vi.spyOn(router, "navigateByUrl").mockResolvedValue(true);
     snackBar = TestBed.inject(MatSnackBar) as unknown as MockMatSnackBar;
   });
 
@@ -195,7 +203,7 @@ describe("LoginComponent", () => {
   });
 
   it("should have footer links", async () => {
-    const links = fixture.nativeElement.querySelectorAll("a[href]");
+    const links = fixture.nativeElement.querySelectorAll("footer a[href]");
     expect(links).toHaveLength(3);
 
     const expectedLinks = [
@@ -211,7 +219,7 @@ describe("LoginComponent", () => {
   });
 
   it("should toggle password visibility", async () => {
-    const inputEl = fixture.nativeElement.querySelector("mat-form-field:nth-of-type(2) input") as HTMLInputElement;
+    const inputEl = fixture.nativeElement.querySelector("mealie-hidden-input input") as HTMLInputElement;
     expect(inputEl.type).toBe("password");
 
     // Click the toggle button
@@ -260,6 +268,18 @@ describe("LoginComponent", () => {
       skipLocationChange: true,
     });
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it("should show required errors when submitting an empty form", async () => {
+    // jsdom does not run the form submit algorithm for button clicks, so dispatch it directly
+    const form = fixture.nativeElement.querySelector("form") as HTMLFormElement;
+    form.dispatchEvent(new Event("submit"));
+    await fixture.whenStable();
+
+    expect(authService.signIn).not.toHaveBeenCalled();
+
+    const errors = Array.from(fixture.nativeElement.querySelectorAll("mat-error")) as HTMLElement[];
+    expect(errors.map((el) => el.textContent)).toEqual(["This Field is Required", "This Field is Required"]);
   });
 
   it("should show error snackbar on failed login", async () => {
@@ -377,6 +397,26 @@ describe("LoginComponent OIDC", () => {
 });
 
 describe("LoginComponent app info", () => {
+  it("should show the register and forgot-password links when signup is allowed", async () => {
+    const appInfo = new MockAppInfoService();
+    appInfo.info$ = vi.fn<() => AppInfo | null>(() => mockAppInfo({ allowSignup: true }));
+    const fixture = await createComponent({ appInfo });
+
+    const registerLink = fixture.nativeElement.querySelector('a[href="/register"]') as HTMLAnchorElement;
+    expect(registerLink).not.toBeNull();
+    expect(registerLink.textContent).toBe("Register");
+    expect(fixture.nativeElement.querySelector('a[href="/forgot-password"]')).not.toBeNull();
+  });
+
+  it("should hide the register link when signup is disabled", async () => {
+    const appInfo = new MockAppInfoService();
+    appInfo.info$ = vi.fn<() => AppInfo | null>(() => mockAppInfo({ allowSignup: false }));
+    const fixture = await createComponent({ appInfo });
+
+    expect(fixture.nativeElement.querySelector('a[href="/register"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/forgot-password"]')).not.toBeNull();
+  });
+
   it("should hide the password form when password login is disabled", async () => {
     const appInfo = new MockAppInfoService();
     appInfo.info$ = vi.fn<() => AppInfo | null>(() => mockAppInfo({ allowPasswordLogin: false, enableOidc: false }));

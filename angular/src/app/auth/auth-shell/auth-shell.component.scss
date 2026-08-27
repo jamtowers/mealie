@@ -1,0 +1,48 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 32px);
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+mat-card {
+  width: 100%;
+  max-width: 500px;
+}
+
+mat-card-header {
+  background-color: var(--brand-color);
+  color: white;
+  --mat-icon-color: white;
+  border-radius: var(--mat-sys-corner-medium) var(--mat-sys-corner-medium) 0 0;
+  justify-content: center;
+  padding-bottom: 12px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+
+  & > div {
+    display: flex;
+  }
+
+  & > * {
+    // We flex-basis 0 here so all elements grow to the same size
+    // This ensures the Mealie text is always in the center of the header even if the two sides have different content sizes
+    flex-basis: 0;
+    flex-grow: 1;
+    &:first-child {
+      justify-content: start;
+    }
+    &:last-child {
+      justify-content: end;
+    }
+  }
+}

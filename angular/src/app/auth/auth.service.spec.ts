@@ -21,6 +21,7 @@ import { AuthService, PENDING_REDIRECT_STORAGE_KEY, type SignInCredentials } fro
 const TOKEN_STORAGE_KEY = "mealie.access_token";
 
 const originalUrl = window.location.href;
+const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, "location");
 
 // Target for the catch-all route so navigations performed by the service
 // (signOut, 401 redirects) resolve instead of failing with NG04002.
@@ -139,6 +140,11 @@ describe("AuthService", () => {
     removeStorageListener = () => undefined;
     window.history.replaceState({}, "", originalUrl);
     vi.restoreAllMocks();
+    // mockLocation() replaces window.location with a plain object and never
+    // restores it, so put the real descriptor back after each test.
+    if (originalLocationDescriptor) {
+      Object.defineProperty(window, "location", originalLocationDescriptor);
+    }
   });
 
   describe("token storage", () => {
