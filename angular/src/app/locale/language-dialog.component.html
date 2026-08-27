@@ -18,8 +18,9 @@
     />
     <mat-autocomplete
       #auto="matAutocomplete"
+      [displayWith]="(locale) => locale.name"
       (opened)="onPanelOpened(trigger)"
-      (panelClosing)="onPanelClosing()"
+      (closed)="onPanelClosed()"
       (optionSelected)="onLocaleSelected($event)"
     >
       @for (locale of filteredLocales(); track locale.value) {

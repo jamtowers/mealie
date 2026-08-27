@@ -83,15 +83,17 @@ export default class LanguageDialogComponent {
       trigger.closePanel();
       return;
     }
+
     if (this.isClosing()) {
       // The dialog is closing: don't let the teardown refocus reopen the panel
       trigger.closePanel();
       return;
     }
+
     this.hasSelected.set(false);
   }
 
-  protected onPanelClosing(): void {
+  protected onPanelClosed(): void {
     // Reset query to current locale name if no option was selected
     if (!this.hasSelected()) {
       this.query.set(this.localeService.currentLocaleName());
