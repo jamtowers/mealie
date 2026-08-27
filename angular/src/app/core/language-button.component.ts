@@ -13,7 +13,7 @@ import LanguageDialogComponent from "../locale/language-dialog.component";
   selector: "mealie-language-button",
   imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
   template: `
-    <button matIconButton [matTooltip]="'settings.language' | translate" (click)="openLanguageDialog()">
+    <button matIconButton [matTooltip]="'sidebar.language' | translate" (click)="openLanguageDialog()">
       <mat-icon svgIcon="translate"></mat-icon>
     </button>
   `,
