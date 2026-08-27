@@ -7,11 +7,12 @@
   <p>{{ "language-dialog.select-description" | translate }}</p>
 
   <mat-form-field class="locale-field" appearance="outline">
-    <mat-label>{{ "settings.language" | translate }}</mat-label>
+    <mat-label>{{ "sidebar.language" | translate }}</mat-label>
     <input
       #trigger="matAutocompleteTrigger"
       matInput
       [matAutocomplete]="auto"
+      [matAutocompleteDisabled]="isClosing()"
       [value]="query()"
       (input)="onQueryInput($event)"
     />

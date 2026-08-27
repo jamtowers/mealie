@@ -52,6 +52,12 @@ export default class LanguageDialogComponent {
   private hasInteracted = signal(false);
   /** Tracks whether an option was selected during the current panel session */
   private hasSelected = signal(false);
+  /**
+   * Set while the dialog is closing (backdrop / cancel). The overlay teardown
+   * natively refocuses the input, which would reopen the autocomplete panel
+   * over the exiting dialog; disable the trigger and close the panel instead.
+   */
+  protected readonly isClosing = signal(false);
 
   protected readonly filteredLocales = computed(() => {
     if (!this.hasOpened()) {
@@ -66,10 +72,19 @@ export default class LanguageDialogComponent {
     return results.map((result) => result.item);
   });
 
+  constructor() {
+    this.dialogRef.beforeClosed().subscribe(() => this.isClosing.set(true));
+  }
+
   protected onPanelOpened(trigger: MatAutocompleteTrigger): void {
     if (!this.hasOpened()) {
       // First focus: close panel immediately (no options shown)
       this.hasOpened.set(true);
+      trigger.closePanel();
+      return;
+    }
+    if (this.isClosing()) {
+      // The dialog is closing: don't let the teardown refocus reopen the panel
       trigger.closePanel();
       return;
     }
