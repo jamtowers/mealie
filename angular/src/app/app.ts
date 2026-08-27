@@ -48,7 +48,7 @@ export class App implements OnInit {
           if (key === "Mealie") {
             this.title.setTitle(key);
           } else {
-            this.translate.get(key).subscribe((translated) => this.title.setTitle(`Mealie - ${translated}`));
+            this.translate.get(key).subscribe((translated) => this.title.setTitle(`${translated} | Mealie`));
           }
         }),
       )

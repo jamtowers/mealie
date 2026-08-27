@@ -163,14 +163,14 @@ describe("App - Page Title", () => {
     await harness.navigateByUrl("/login", LoginComponent);
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Mealie - Login");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Login | Mealie");
   });
 
   it("should set translated title for parent route", async () => {
     await harness.navigateByUrl("/", DashboardComponent);
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Mealie - Dashboard");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Dashboard | Mealie");
   });
 
   it("should fall back to default title when route has no title key", async () => {
@@ -184,13 +184,13 @@ describe("App - Page Title", () => {
     await harness.navigateByUrl("/child");
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Mealie - child.title");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("child.title | Mealie");
   });
 
   it("should use parent title when child route has no title key", async () => {
     await harness.navigateByUrl("/empty-child");
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Mealie - Dashboard");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Dashboard | Mealie");
   });
 });

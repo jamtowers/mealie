@@ -32,7 +32,7 @@ This list isn't isn't exhaustive (I'm not going to list every built in angular f
 - The theme change and language change buttons are now in the top right of the toolbar to give them more visibility (I can be convinced to put them back)
 - The vue app is largely uses type based directory structure, components are under one directory, pages in another, etc, etc, The Angular app is area based, so code that is related is close to eachother, there is a more specific
 - Local Storage is used over cookies, this means any user config, session info, etc stored in cookies won't carry over to the new front end and vice versa
-- I have put the app name at the start of the page title (e.g. `Mealie - Login` rather than just `Login`), I could be convinced the other way around is the right option (e.g. `Login - Mealie`) but I don't have any strong preferences myself
+- I have put the app name at the start of the page title (e.g. `Login | Mealie` rather than just `Login`)
   - This is important for those who are mainly reading their tabs for whatever reason (e.g. somebody who relies on a screenreader)
 
 ### New translation keys needed
