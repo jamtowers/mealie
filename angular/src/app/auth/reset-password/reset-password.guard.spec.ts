@@ -1,19 +1,21 @@
 import { TestBed } from "@angular/core/testing";
-import { ActivatedRouteSnapshot, RedirectCommand, Router, RouterStateSnapshot, UrlTree } from "@angular/router";
+import { ActivatedRouteSnapshot, RedirectCommand, Router, UrlTree } from "@angular/router";
 
 import type { Mock } from "vitest";
 
+import { mockActivatedRoute, mockParseUrl, mockRouterState } from "@testing/route.mock";
+
 import { resetPasswordGuard } from "./reset-password.guard";
 
-const mockState = {} as RouterStateSnapshot;
+const mockState = mockRouterState();
 
 describe("resetPasswordGuard", () => {
   let mockRoute: ActivatedRouteSnapshot;
   let parseUrl: Mock<(url: string) => UrlTree>;
 
   beforeEach(() => {
-    mockRoute = { queryParams: {} } as ActivatedRouteSnapshot;
-    parseUrl = vi.fn(() => ({}) as UrlTree);
+    mockRoute = mockActivatedRoute();
+    parseUrl = mockParseUrl();
 
     TestBed.configureTestingModule({
       providers: [{ provide: Router, useValue: { parseUrl } }],

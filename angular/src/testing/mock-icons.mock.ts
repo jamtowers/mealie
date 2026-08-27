@@ -1,19 +1,17 @@
-import { MatIconRegistry } from "@angular/material/icon";
+import { of } from "rxjs";
+import { vi } from "vitest";
 
-const MOCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h10v10H0z"/></svg>`;
+const SVGNS = "http://www.w3.org/2000/svg";
 
 /**
- * Generic helper to register arbitrary mock SVG icons.
+ * A `MatIconRegistry` double that renders a fresh dummy `<svg>` for any icon name.
+ * Provide it in place of the real registry so component specs don't need to know —
+ * or register — the icons a template uses:
  *
  * ```ts
- * import { mockSvgIcons } from "@testing/mock-icons.mock";
- * import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
- *
- * mockSvgIcons(iconRegistry, mockDomSanitizer, ["email", "lock"]);
+ * providers: [{ provide: MatIconRegistry, useValue: new MockMatIconRegistry() }]
  * ```
  */
-export function mockSvgIcons(iconRegistry: MatIconRegistry, names: string[]): void {
-  for (const name of names) {
-    iconRegistry.addSvgIconLiteral(name, MOCK_SVG);
-  }
+export class MockMatIconRegistry {
+  getNamedSvgIcon = vi.fn(() => of(document.createElementNS(SVGNS, "svg")));
 }

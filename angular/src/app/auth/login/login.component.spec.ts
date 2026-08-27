@@ -1,7 +1,6 @@
 import { HarnessLoader } from "@angular/cdk/testing";
 import { TestbedHarnessEnvironment } from "@angular/cdk/testing/testbed";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 import { Router, provideRouter } from "@angular/router";
 
 import { MatButtonHarness } from "@angular/material/button/testing";
@@ -10,45 +9,26 @@ import { MatIconRegistry } from "@angular/material/icon";
 import { MatInputHarness } from "@angular/material/input/testing";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
-import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom, of } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 import type { Mock } from "vitest";
 
 import type { AppInfo } from "@api/models/app-info";
-import { UsersAuthenticationService } from "@api/services/usersAuthentication.service";
-import { UsersCRUDService } from "@api/services/usersCRUD.service";
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
+import { mockAppInfo } from "@testing/app-info.mock";
 import { mockLocalStorage } from "@testing/local-storage.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatSnackBar } from "@testing/mat-snack-bar.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 import { AppInfoService } from "@utils/app-info.service";
 
 import { AuthService } from "../auth.service";
 // Import the component default export
 import LoginComponent from "./login.component";
 
-const SVG_ICONS = [
-  "silverware-variant",
-  "email",
-  "lock",
-  "eye-off",
-  "eye",
-  "heart",
-  "github",
-  "information",
-  "translate",
-  "theme-light-dark",
-  "file-document-multiple-outline",
-];
-
 // ── Mock services ──
 
 class MockAuthService {
   signIn = vi.fn().mockResolvedValue(undefined as void);
   startOidcFlow = vi.fn();
-}
-
-class MockMatSnackBar {
-  open = vi.fn();
 }
 
 class MockAppInfoService {
@@ -60,20 +40,6 @@ class MockAppInfoService {
   allowSignup$ = vi.fn(() => this.info$()?.allowSignup ?? false);
   isFirstLogin$ = vi.fn(() => false);
 }
-
-// ── API service mocks ──
-
-const mockAuthApi = {
-  getTokenApiAuthTokenPost: vi.fn().mockReturnValue(of({ access_token: "test-token" })),
-};
-
-const mockUsersApi = {
-  getLoggedInUserApiUsersSelfGet: vi
-    .fn()
-    .mockReturnValue(
-      of({} as unknown as Parameters<UsersCRUDService["getLoggedInUserApiUsersSelfGet"]> extends [] ? void : never),
-    ),
-};
 
 // ── Helpers ──
 
@@ -95,42 +61,10 @@ async function createComponent(
       { provide: AuthService, useValue: overrides.authService ?? new MockAuthService() },
       { provide: MatSnackBar, useValue: overrides.snackBar ?? new MockMatSnackBar() },
       { provide: AppInfoService, useValue: overrides.appInfo ?? new MockAppInfoService() },
-      provideTranslateService({ fallbackLang: "en-US" }),
-      { provide: DomSanitizer, useValue: mockDomSanitizer },
-      { provide: UsersAuthenticationService, useValue: mockAuthApi },
-      { provide: UsersCRUDService, useValue: mockUsersApi },
+      { provide: TranslateService, useValue: mockTranslateService },
+      { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
     ],
   }).compileComponents();
-
-  // Seed translations so TranslatePipe doesn't throw
-  const translate = TestBed.inject(TranslateService);
-  translate.setTranslation("en-US", {
-    "user.sign-in": "Sign In",
-    "user.email-or-username": "Email or Username",
-    "user.password": "Password",
-    "user.remember-me": "Remember Me",
-    "user.login": "Login",
-    "user.hide-password": "Hide Password",
-    "general.loading": "Loading",
-    "user.username": "Username",
-    "user.it-looks-like-this-is-your-first-time-logging-in": "First Time?",
-    "user.dont-want-to-see-this-anymore-be-sure-to-change-your-email": "Change your email",
-    "user.or": "or",
-    "validators.required": "This Field is Required",
-    "user.login-oidc": "Login with",
-    "user.invalid-credentials": "Invalid Credentials",
-    "user.account-locked-please-try-again-later": "Account locked, please try again later",
-    "events.something-went-wrong": "Something went wrong",
-    "about.sponsor": "Sponsor",
-    "about.github": "GitHub",
-    "about.docs": "Docs",
-    "user.register": "Register",
-    "user.forgot-password": "Forgot Password",
-  });
-  await firstValueFrom(translate.use("en-US"));
-
-  // Register mock SVG icons so MatIcon doesn't error
-  mockSvgIcons(TestBed.inject(MatIconRegistry), SVG_ICONS);
 
   const fixture = TestBed.createComponent(LoginComponent);
   await fixture.whenStable();
@@ -145,21 +79,6 @@ async function fillForm(loader: HarnessLoader, fixture: ComponentFixture<LoginCo
   await passwordHarness.setValue("pass");
 
   await fixture.whenStable();
-}
-
-function mockAppInfo(overrides: Partial<AppInfo> = {}): AppInfo {
-  return {
-    production: false,
-    version: "1.0.0",
-    demoStatus: false,
-    allowSignup: true,
-    allowPasswordLogin: true,
-    enableOidc: false,
-    oidcRedirect: false,
-    oidcProviderName: "Test Provider",
-    tokenTime: 3600,
-    ...overrides,
-  };
 }
 
 // ── Tests ──
@@ -279,7 +198,7 @@ describe("LoginComponent", () => {
     expect(authService.signIn).not.toHaveBeenCalled();
 
     const errors = Array.from(fixture.nativeElement.querySelectorAll("mat-error")) as HTMLElement[];
-    expect(errors.map((el) => el.textContent)).toEqual(["This Field is Required", "This Field is Required"]);
+    expect(errors.map((el) => el.textContent)).toEqual(["[validators.required]", "[validators.required]"]);
   });
 
   it("should show error snackbar on failed login", async () => {
@@ -298,13 +217,13 @@ describe("LoginComponent", () => {
 
   it("should display translate pipe outputs in template", async () => {
     const title = fixture.nativeElement.querySelector("h2");
-    expect(title.textContent).toContain("Sign In");
+    expect(title.textContent).toContain("[user.sign-in]");
   });
 
   it("should have aria attributes on password toggle button", async () => {
     const toggleBtn = fixture.nativeElement.querySelector("mat-form-field button[maticonbutton]");
     expect(toggleBtn.getAttribute("aria-pressed")).toBe("true");
-    expect(toggleBtn.getAttribute("aria-label")).toBe("Hide Password");
+    expect(toggleBtn.getAttribute("aria-label")).toBe("[user.hide-password]");
   });
 
   it("should not show first-login banner when isFirstLogin is false", async () => {
@@ -378,7 +297,7 @@ describe("LoginComponent OIDC", () => {
     const button = fixture.nativeElement.querySelector(
       'button[matButton="filled"][type="button"]',
     ) as HTMLButtonElement;
-    expect(button.textContent).toContain("Login with");
+    expect(button.textContent).toContain("[user.login-oidc]");
     expect(button.textContent).toContain("My Provider");
   });
 
@@ -404,7 +323,7 @@ describe("LoginComponent app info", () => {
 
     const registerLink = fixture.nativeElement.querySelector('a[href="/register"]') as HTMLAnchorElement;
     expect(registerLink).not.toBeNull();
-    expect(registerLink.textContent).toBe("Register");
+    expect(registerLink.textContent).toBe("[user.register]");
     expect(fixture.nativeElement.querySelector('a[href="/forgot-password"]')).not.toBeNull();
   });
 

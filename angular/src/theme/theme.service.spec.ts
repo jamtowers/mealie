@@ -4,12 +4,23 @@ import { mockLocalStorage } from "@testing/local-storage.mock";
 
 import { ThemeService } from "./theme.service";
 
+/**
+ * Create a `ThemeService` seeded with an optional stored mode.
+ * The mode is resolved during construction, so constructor tests get a fresh
+ * instance instead of resetting the `TestBed` module.
+ */
+function createService(storedMode?: string): ThemeService {
+  if (storedMode) {
+    localStorage.setItem("mealie-theme", storedMode);
+  }
+  return new ThemeService();
+}
+
 describe("ThemeService", () => {
   let service: ThemeService;
 
   beforeEach(() => {
     mockLocalStorage();
-    localStorage.clear();
 
     TestBed.configureTestingModule({
       providers: [ThemeService],
@@ -92,27 +103,11 @@ describe("ThemeService", () => {
     });
 
     it("loads mode from localStorage", () => {
-      localStorage.setItem("mealie-theme", "dark");
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [ThemeService],
-      });
-
-      const service = TestBed.inject(ThemeService);
-      expect(service.currentModeIcon()).toBe("weather-night");
+      expect(createService("dark").currentModeIcon()).toBe("weather-night");
     });
 
     it("ignores invalid localStorage values and defaults to auto", () => {
-      localStorage.setItem("mealie-theme", "invalid");
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [ThemeService],
-      });
-
-      const service = TestBed.inject(ThemeService);
-      expect(service.currentModeIcon()).toBe("theme-light-dark");
+      expect(createService("invalid").currentModeIcon()).toBe("theme-light-dark");
     });
   });
 

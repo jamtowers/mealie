@@ -3,26 +3,11 @@ import { TestBed } from "@angular/core/testing";
 
 import { of, throwError } from "rxjs";
 
-import type { AppInfo } from "@api/models/app-info";
 import type { AppStartupInfo } from "@api/models/app-startup-info";
 import { AppAboutService } from "@api/services/appAbout.service";
+import { mockAppInfo } from "@testing/app-info.mock";
 
 import { AppInfoService } from "./app-info.service";
-
-function mockAppInfo(overrides: Partial<AppInfo> = {}): AppInfo {
-  return {
-    production: false,
-    version: "1.0.0",
-    demoStatus: false,
-    allowSignup: true,
-    allowPasswordLogin: true,
-    enableOidc: false,
-    oidcRedirect: false,
-    oidcProviderName: "Test Provider",
-    tokenTime: 3600,
-    ...overrides,
-  };
-}
 
 function mockStartupInfo(overrides: Partial<AppStartupInfo> = {}): AppStartupInfo {
   return {

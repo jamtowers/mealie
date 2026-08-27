@@ -1,20 +1,16 @@
 import { Component, signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 import { provideRouter } from "@angular/router";
 
 import { MatIconRegistry } from "@angular/material/icon";
 
-import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockLocalStorage } from "@testing/local-storage.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import AuthShellComponent from "./auth-shell.component";
-
-const SVG_ICONS = ["arrow-left", "translate", "theme-light-dark"];
 
 @Component({
   template: `
@@ -42,20 +38,10 @@ describe("AuthShellComponent", () => {
       imports: [TestHostComponent],
       providers: [
         provideRouter([]),
-        provideTranslateService({ fallbackLang: "en-US" }),
-        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: TranslateService, useValue: mockTranslateService },
+        { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
       ],
     }).compileComponents();
-
-    const translate = TestBed.inject(TranslateService);
-    translate.setTranslation("en-US", {
-      "general.back": "Back",
-      "sidebar.language": "Language",
-      "settings.theme.auto-mode": "Auto Mode",
-    });
-    await firstValueFrom(translate.use("en-US"));
-
-    mockSvgIcons(TestBed.inject(MatIconRegistry), SVG_ICONS);
 
     fixture = TestBed.createComponent(TestHostComponent);
     host = fixture.componentInstance;

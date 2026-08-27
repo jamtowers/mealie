@@ -1,14 +1,15 @@
 import { TestBed } from "@angular/core/testing";
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from "@angular/router";
+import { Router, UrlTree } from "@angular/router";
 
 import type { Mock } from "vitest";
 
+import { mockActivatedRoute, mockParseUrl, mockRouterState } from "@testing/route.mock";
 import { AppInfoService } from "@utils/app-info.service";
 
 import { allowPasswordLoginGuard } from "./allow-password-login.guard";
 
-const mockRoute = {} as ActivatedRouteSnapshot;
-const mockState = {} as RouterStateSnapshot;
+const mockRoute = mockActivatedRoute();
+const mockState = mockRouterState();
 
 describe("passwordLoginGuard", () => {
   let allowPasswordLogin$: Mock<() => boolean>;
@@ -16,7 +17,7 @@ describe("passwordLoginGuard", () => {
 
   beforeEach(() => {
     allowPasswordLogin$ = vi.fn(() => true);
-    parseUrl = vi.fn(() => ({}) as UrlTree);
+    parseUrl = mockParseUrl();
 
     TestBed.configureTestingModule({
       providers: [

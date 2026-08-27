@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 
 import { MatDialog } from "@angular/material/dialog";
 import { MatIconRegistry } from "@angular/material/icon";
@@ -7,8 +6,7 @@ import { MatIconRegistry } from "@angular/material/icon";
 import { TranslateService } from "@ngx-translate/core";
 
 import LanguageDialogComponent from "@app/locale/language-dialog.component";
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
 import { mockTranslateService } from "@testing/translate-service.mock";
 
 import LanguageButton from "./language-button.component";
@@ -27,14 +25,11 @@ describe("LanguageButton", () => {
       providers: [
         { provide: MatDialog, useClass: MatDialogStub },
         { provide: TranslateService, useValue: mockTranslateService },
-        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
       ],
     }).compileComponents();
 
     dialog = TestBed.inject(MatDialog) as unknown as MatDialogStub;
-
-    // Register mock SVG icons so MatIcon doesn't error
-    mockSvgIcons(TestBed.inject(MatIconRegistry), ["translate"]);
 
     fixture = TestBed.createComponent(LanguageButton);
     await fixture.whenStable();

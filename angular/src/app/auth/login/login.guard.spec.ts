@@ -1,18 +1,19 @@
 import { TestBed } from "@angular/core/testing";
-import { ActivatedRouteSnapshot, RedirectCommand, Router, RouterStateSnapshot, UrlTree } from "@angular/router";
+import { ActivatedRouteSnapshot, RedirectCommand, Router, UrlTree } from "@angular/router";
 
 import type { Mock } from "vitest";
 
 import type { AppInfo } from "@api/models/app-info";
+import { mockActivatedRoute, mockParseUrl, mockRouterState } from "@testing/route.mock";
 import { AppInfoService } from "@utils/app-info.service";
 
 import { AuthService, PENDING_REDIRECT_STORAGE_KEY } from "../auth.service";
 import { loginGuard } from "./login.guard";
 
-const mockRoute = { queryParams: {} } as ActivatedRouteSnapshot;
-const mockState = {} as RouterStateSnapshot;
+const mockState = mockRouterState();
 
 describe("loginGuard", () => {
+  let mockRoute: ActivatedRouteSnapshot;
   let status$: Mock<() => "loading" | "authenticated" | "unauthenticated">;
   let oauthSignIn: Mock<() => Promise<void>>;
   let startOidcFlow: Mock<() => void>;
@@ -21,13 +22,13 @@ describe("loginGuard", () => {
 
   beforeEach(() => {
     sessionStorage.clear();
-    mockRoute.queryParams = {};
+    mockRoute = mockActivatedRoute();
 
     status$ = vi.fn(() => "loading");
     oauthSignIn = vi.fn(() => Promise.resolve());
     startOidcFlow = vi.fn();
     info$ = vi.fn(() => null);
-    parseUrl = vi.fn(() => ({}) as UrlTree);
+    parseUrl = mockParseUrl();
 
     TestBed.configureTestingModule({
       providers: [

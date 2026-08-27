@@ -1,74 +1,29 @@
-import { HarnessLoader } from "@angular/cdk/testing";
 import { TestbedHarnessEnvironment } from "@angular/cdk/testing/testbed";
 import { signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-  MatAutocompleteTrigger,
-} from "@angular/material/autocomplete";
+import { MatAutocompleteModule } from "@angular/material/autocomplete";
 import { MatAutocompleteHarness } from "@angular/material/autocomplete/testing";
 import { MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
-import { MatInputHarness } from "@angular/material/input/testing";
 
-import { TranslateService, provideTranslateService } from "@ngx-translate/core";
+import { TranslateService } from "@ngx-translate/core";
 import { Subject } from "rxjs";
 import { vi } from "vitest";
 
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import { LOCALES } from "./available-locales";
 import LanguageDialogComponent from "./language-dialog.component";
 import { LocaleService } from "./locale.service";
-
-const SVG_ICONS = ["translate"];
-
-// Access protected members via type cast
-const componentAccess = (
-  c: LanguageDialogComponent,
-): Omit<LanguageDialogComponent, never> & {
-  onPanelOpened: (trigger: MatAutocompleteTrigger) => void;
-  onPanelClosing: () => void;
-  onQueryInput: (event: Event) => void;
-  onLocaleSelected: (event: MatAutocompleteSelectedEvent) => void;
-} =>
-  c as unknown as LanguageDialogComponent & {
-    onPanelOpened: (trigger: MatAutocompleteTrigger) => void;
-    onPanelClosing: () => void;
-    onQueryInput: (event: Event) => void;
-    onLocaleSelected: (event: MatAutocompleteSelectedEvent) => void;
-  };
 
 class MockLocaleService {
   readonly locale = signal("en-US");
   readonly currentLocaleName = signal("American English");
 
   setLocale = vi.fn();
-}
-
-class MockTranslateService {
-  // no-op
-}
-
-function createMockTrigger(): MatAutocompleteTrigger {
-  return { closePanel: vi.fn() } as unknown as MatAutocompleteTrigger;
-}
-
-function createMockEvent(locale: (typeof LOCALES)[number]): MatAutocompleteSelectedEvent {
-  return {
-    option: { value: locale },
-  } as unknown as MatAutocompleteSelectedEvent;
-}
-
-function createInputEvent(value: string): Event {
-  return {
-    target: { value },
-  } as unknown as Event;
 }
 
 async function createComponent(): Promise<{
@@ -83,17 +38,14 @@ async function createComponent(): Promise<{
     imports: [MatAutocompleteModule, MatDialogModule, MatIconModule, MatInputModule, LanguageDialogComponent],
     providers: [
       { provide: LocaleService, useClass: MockLocaleService },
-      { provide: TranslateService, useClass: MockTranslateService },
+      { provide: TranslateService, useValue: mockTranslateService },
       {
         provide: MatDialogRef,
         useValue: { close: vi.fn(), beforeClosed: vi.fn(() => beforeClosed.asObservable()) },
       },
-      provideTranslateService({ fallbackLang: "en-US" }),
-      { provide: DomSanitizer, useValue: mockDomSanitizer },
+      { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
     ],
   }).compileComponents();
-
-  mockSvgIcons(TestBed.inject(MatIconRegistry), SVG_ICONS);
 
   const fixture = TestBed.createComponent(LanguageDialogComponent);
   await fixture.whenStable();
@@ -106,258 +58,182 @@ async function createComponent(): Promise<{
 
 describe("LanguageDialogComponent", () => {
   let fixture: ComponentFixture<LanguageDialogComponent>;
-  let component: LanguageDialogComponent;
-  let loader: HarnessLoader;
   let localeService: MockLocaleService;
   let dialogRef: MatDialogRef<LanguageDialogComponent>;
   let beforeClosed: Subject<void>;
+  let harness: MatAutocompleteHarness;
+  let inputElement: HTMLInputElement;
 
   beforeEach(async () => {
     const setup = await createComponent();
     fixture = setup.fixture;
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    loader = TestbedHarnessEnvironment.loader(fixture);
     localeService = TestBed.inject(LocaleService) as unknown as MockLocaleService;
     dialogRef = setup.dialogRef;
     beforeClosed = setup.beforeClosed;
+    fixture.detectChanges();
+    inputElement = fixture.nativeElement.querySelector("input") as HTMLInputElement;
+    harness = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatAutocompleteHarness);
   });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Focusing the input opens the panel, which the component closes immediately on
+   * the first open; clicking the input reopens it.
+   */
+  async function primeAndOpen(): Promise<void> {
+    await harness.focus();
+    await fixture.whenStable();
+    inputElement.click();
+    await fixture.whenStable();
+  }
+
+  /** Closes the panel without selecting an option, as a user would (click outside). */
+  function closePanelWithoutSelection(): void {
+    inputElement.blur();
+    document.body.click();
+  }
 
   describe("initial state", () => {
-    it("initializes query with the current locale name", async () => {
-      await fixture.whenStable();
-
-      expect(component["query"]()).toBe(component["localeService"].currentLocaleName());
+    it("initializes the input with the current locale name", async () => {
+      expect(await harness.getValue()).toBe("American English");
     });
   });
 
-  describe("filteredLocales", () => {
-    it("returns empty array before the panel has been opened", async () => {
+  describe("autocomplete panel", () => {
+    it("closes the panel on the first focus", async () => {
+      await harness.focus();
       await fixture.whenStable();
 
-      expect(component["filteredLocales"]()).toEqual([]);
+      expect(await harness.isOpen()).toBe(false);
     });
 
-    it("returns all locales after the panel opens once but before any interaction", async () => {
-      await fixture.whenStable();
+    it("shows all locales on the next open without any typing", async () => {
+      await primeAndOpen();
 
-      const trigger = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger);
-
-      await fixture.whenStable();
-
-      expect(component["filteredLocales"]()).toEqual(LOCALES);
+      expect(await harness.isOpen()).toBe(true);
+      const options = await harness.getOptions();
+      expect(options.length).toBe(LOCALES.length);
     });
 
-    it("returns fuse search results after the user types", async () => {
+    it("filters the options as the user types", async () => {
+      await primeAndOpen();
+
+      // The user clears the pre-filled locale name before typing a search
+      await harness.clear();
+      await harness.enterText("French");
       await fixture.whenStable();
 
-      const trigger1 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger1);
-      await fixture.whenStable();
-
-      const trigger2 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger2);
-      await fixture.whenStable();
-      expect(component["filteredLocales"]()).toEqual(LOCALES);
-
-      componentAccess(component).onQueryInput(createInputEvent("French"));
-      await fixture.whenStable();
-
-      const results = component["filteredLocales"]();
-      expect(results.length).toBeGreaterThan(0);
-      for (const locale of results) {
-        expect(locale.name.toLowerCase()).toContain("french");
+      const options = await harness.getOptions();
+      expect(options.length).toBeGreaterThan(0);
+      for (const option of options) {
+        const text = await option.getText();
+        expect(text.toLowerCase()).toContain("french");
       }
     });
-  });
 
-  describe("onPanelOpened", () => {
-    it("closes the panel on the first focus and sets hasOpened", async () => {
+    it("resets the query to the current locale name when the panel closes without a selection", async () => {
+      await primeAndOpen();
+
+      await harness.clear();
+      await harness.enterText("German");
+      await fixture.whenStable();
+      expect(await harness.isOpen()).toBe(true);
+
+      closePanelWithoutSelection();
       await fixture.whenStable();
 
-      const trigger = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger);
-
-      expect(trigger.closePanel).toHaveBeenCalled();
-      expect(component["hasOpened"]()).toBe(true);
-    });
-
-    it("does not close the panel on subsequent opens and resets hasSelected", async () => {
-      await fixture.whenStable();
-
-      const trigger1 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger1);
-      await fixture.whenStable();
-
-      component["hasSelected"].set(true);
-
-      const trigger2 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger2);
-
-      expect(trigger2.closePanel).not.toHaveBeenCalled();
-      expect(component["hasSelected"]()).toBe(false);
+      expect(await harness.isOpen()).toBe(false);
+      expect(await harness.getValue()).toBe("American English");
     });
   });
 
-  describe("onPanelClosing", () => {
-    it("resets query to current locale name when no option was selected", async () => {
+  describe("locale selection", () => {
+    it("applies the selected locale and closes the dialog when it is not the active one", async () => {
+      await primeAndOpen();
+
+      await harness.clear();
+      await harness.enterText("German");
+      await fixture.whenStable();
+      // String text filters are exact matches; use a regex for a partial match
+      await harness.selectOption({ text: /German/ });
       await fixture.whenStable();
 
-      component["query"].set("some search text");
-      component["hasInteracted"].set(true);
-      component["hasSelected"].set(false);
-      await fixture.whenStable();
-
-      componentAccess(component).onPanelClosing();
-
-      expect(component["query"]()).toBe(component["localeService"].currentLocaleName());
+      expect(await harness.isOpen()).toBe(false);
+      expect(await harness.getValue()).toBe("Deutsch (German)");
+      expect(localeService.setLocale).toHaveBeenCalledWith("de-DE");
+      expect(dialogRef.close).toHaveBeenCalled();
     });
 
-    it("keeps the query unchanged when an option was selected", async () => {
+    it("keeps the dialog open when the active locale is selected", async () => {
+      await primeAndOpen();
+
+      await harness.clear();
+      await harness.enterText("English");
+      await fixture.whenStable();
+      await harness.selectOption({ text: /American English/ });
       await fixture.whenStable();
 
-      component["query"].set("French");
-      component["hasSelected"].set(true);
-      await fixture.whenStable();
-
-      componentAccess(component).onPanelClosing();
-
-      expect(component["query"]()).toBe("French");
-    });
-  });
-
-  describe("onQueryInput", () => {
-    it("sets hasInteracted and updates the query signal", async () => {
-      await fixture.whenStable();
-
-      expect(component["hasInteracted"]()).toBe(false);
-
-      componentAccess(component).onQueryInput(createInputEvent("German"));
-
-      expect(component["hasInteracted"]()).toBe(true);
-      expect(component["query"]()).toBe("German");
-    });
-  });
-
-  describe("onLocaleSelected", () => {
-    it("does not close the dialog when selecting the active locale", async () => {
-      await fixture.whenStable();
-
-      const activeLocale = LOCALES.find((l) => l.value === "en-US")!;
-      const event = createMockEvent(activeLocale);
-
-      componentAccess(component).onLocaleSelected(event);
-
+      expect(await harness.isOpen()).toBe(false);
+      expect(await harness.getValue()).toBe("American English");
+      expect(localeService.setLocale).not.toHaveBeenCalled();
       expect(dialogRef.close).not.toHaveBeenCalled();
     });
+  });
 
-    it("closes the dialog and sets the locale when selecting a different locale", async () => {
+  describe("while the dialog is closing", () => {
+    it("does not reopen the panel", async () => {
+      // Prime the panel so this is not the first open
+      await harness.focus();
       await fixture.whenStable();
 
-      localeService.locale.set("en-US");
+      beforeClosed.next(undefined);
+      await fixture.whenStable();
 
-      const newLocale = LOCALES.find((l) => l.value === "de-DE")!;
-      const event = createMockEvent(newLocale);
+      inputElement.click();
+      await fixture.whenStable();
 
-      componentAccess(component).onLocaleSelected(event);
+      expect(await harness.isOpen()).toBe(false);
+    });
+
+    it("does not reopen the panel when the input is refocused while the dialog is closing", async () => {
+      // Prime the panel so this is not the first open
+      await harness.focus();
+      await fixture.whenStable();
+
+      // A plain refocus reopens the panel — the teardown refocus will do the same
+      inputElement.blur();
+      inputElement.focus();
+      await fixture.whenStable();
+      expect(await harness.isOpen()).toBe(true);
+
+      closePanelWithoutSelection();
+      await fixture.whenStable();
+
+      // The dialog starts closing before change detection disables the trigger,
+      // and the teardown refocuses the input in that window
+      beforeClosed.next(undefined);
+      inputElement.blur();
+      inputElement.focus();
+
+      // The refocus opens the panel, and the component closes it again before
+      // anything renders. Query the panel DOM directly: once the trigger is
+      // disabled, the harness's isOpen() can no longer locate the panel (it
+      // resolves it via the input's aria-controls, which is null when disabled).
+      const panelElement = document.querySelector(".mat-mdc-autocomplete-panel");
+      expect(panelElement?.classList.contains("mat-mdc-autocomplete-visible")).toBeFalsy();
+    });
+  });
+
+  describe("cancel button", () => {
+    it("closes the dialog", () => {
+      const cancelButton = fixture.nativeElement.querySelector("mat-dialog-actions button") as HTMLButtonElement;
+
+      cancelButton.click();
 
       expect(dialogRef.close).toHaveBeenCalled();
-      expect(component["query"]()).toBe(newLocale.name);
-    });
-  });
-
-  describe("isClosing", () => {
-    it("is set when the dialog starts closing", () => {
-      expect(component["isClosing"]()).toBe(false);
-
-      beforeClosed.next(undefined);
-
-      expect(component["isClosing"]()).toBe(true);
-    });
-
-    it("closes the panel instead of reopening it while the dialog is closing", async () => {
-      await fixture.whenStable();
-
-      // Prime the panel so this is not the first open
-      componentAccess(component).onPanelOpened(createMockTrigger());
-      await fixture.whenStable();
-
-      beforeClosed.next(undefined);
-
-      const trigger = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger);
-
-      expect(trigger.closePanel).toHaveBeenCalled();
-    });
-  });
-
-  describe("template event handlers", () => {
-    it("should trigger onQueryInput via the input element", async () => {
-      await fixture.whenStable();
-
-      const trigger1 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger1);
-      await fixture.whenStable();
-
-      const trigger2 = createMockTrigger();
-      componentAccess(component).onPanelOpened(trigger2);
-      await fixture.whenStable();
-
-      const inputEl = fixture.nativeElement.querySelector("mat-form-field input") as HTMLInputElement;
-      inputEl.value = "French";
-      inputEl.dispatchEvent(new Event("input"));
-      await fixture.whenStable();
-
-      expect(component["hasInteracted"]()).toBe(true);
-      expect(component["query"]()).toBe("French");
-    });
-
-    it("should trigger onPanelOpened via the autocomplete", async () => {
-      await fixture.whenStable();
-
-      // Simulate the (opened) event by focusing the trigger input
-      const inputEl = fixture.nativeElement.querySelector("mat-form-field input") as HTMLInputElement;
-      inputEl.focus();
-      await fixture.whenStable();
-
-      // First focus should set hasOpened
-      expect(component["hasOpened"]()).toBe(true);
-    });
-
-    it("should trigger onLocaleSelected via selecting an autocomplete option", async () => {
-      // Prevent dialogRef.close from actually closing the dialog
-      const closeSpy = vi.spyOn(dialogRef, "close").mockImplementation(vi.fn());
-
-      await fixture.whenStable();
-
-      // Prime the panel so it stays open on the next open
-      componentAccess(component).onPanelOpened(createMockTrigger());
-      await fixture.whenStable();
-
-      const inputHarness = await loader.getHarness(MatInputHarness);
-      await inputHarness.focus();
-      await fixture.whenStable();
-
-      const autocompleteHarness = await loader.getHarness(MatAutocompleteHarness);
-      const options = await autocompleteHarness.getOptions();
-      const deLocale = LOCALES.find((l) => l.value === "de-DE")!;
-
-      // Iterate to find the right option (async find doesn't work)
-      let targetOption;
-      for (const opt of options) {
-        const text = await opt.getText();
-        if (text.includes(deLocale.name)) {
-          targetOption = opt;
-          break;
-        }
-      }
-
-      await targetOption!.click();
-      await fixture.whenStable();
-
-      expect(closeSpy).toHaveBeenCalled();
-      expect(localeService.setLocale).toHaveBeenCalledWith(deLocale.value);
     });
   });
 });

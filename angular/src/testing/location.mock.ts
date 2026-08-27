@@ -17,13 +17,13 @@ export function mockLocation(href = "http://localhost/"): typeof window.location
     origin: url.origin,
     hostname: url.hostname,
     pathname: url.pathname,
-    hash: "",
-    search: "",
+    hash: url.hash,
+    search: url.search,
     protocol: url.protocol,
     host: url.host,
     port: url.port,
     ancestorOrigins: {} as DOMStringList,
-    getSearch: () => "",
+    getSearch: () => url.search,
     assign: () => {
       return;
     },

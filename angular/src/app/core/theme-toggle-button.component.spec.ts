@@ -1,13 +1,11 @@
 import { signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 
 import { MatIconRegistry } from "@angular/material/icon";
 
 import { TranslateService } from "@ngx-translate/core";
 
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
 import { mockTranslateService } from "@testing/translate-service.mock";
 import { ThemeService } from "@theme/theme.service";
 
@@ -29,14 +27,11 @@ describe("ThemeToggleButton", () => {
       providers: [
         { provide: ThemeService, useClass: ThemeServiceStub },
         { provide: TranslateService, useValue: mockTranslateService },
-        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
       ],
     }).compileComponents();
 
     themeService = TestBed.inject(ThemeService) as unknown as ThemeServiceStub;
-
-    // Register mock SVG icons so MatIcon doesn't error
-    mockSvgIcons(TestBed.inject(MatIconRegistry), ["theme-light-dark"]);
 
     fixture = TestBed.createComponent(ThemeToggleButton);
     await fixture.whenStable();

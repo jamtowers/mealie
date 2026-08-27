@@ -3,65 +3,31 @@ import { TestbedHarnessEnvironment } from "@angular/cdk/testing/testbed";
 import { provideHttpClient } from "@angular/common/http";
 import { Component, signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { DomSanitizer } from "@angular/platform-browser";
 import { RouterOutlet } from "@angular/router";
 import { provideRouter } from "@angular/router";
 
 import { MatDialog } from "@angular/material/dialog";
 import { MatIconRegistry } from "@angular/material/icon";
+import { MatMenuHarness } from "@angular/material/menu/testing";
 import { MatSidenavHarness } from "@angular/material/sidenav/testing";
 
 import { TranslateService } from "@ngx-translate/core";
 
 import type { UserOut } from "@api/models/user-out";
 import { AuthService } from "@app/auth/auth.service";
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
 import { mockLocalStorage } from "@testing/local-storage.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
 import { mockTranslateService } from "@testing/translate-service.mock";
+import { createMockUser } from "@testing/user.mock";
 import { ThemeService } from "@theme/theme.service";
 
 import DefaultLayout from "./default-layout.component";
-
-const DEFAULT_LAYOUT_ICONS = [
-  "menu",
-  "silverware-variant",
-  "translate",
-  "magnify",
-  "logout",
-  "heart",
-  "plus",
-  "file-cabinet",
-  "theme-light-dark",
-  "silverware-fork-knife",
-  "calendar-multiselect",
-  "format-list-checks",
-  "timeline-text",
-  "book-open-page-variant",
-  "shape-outline",
-  "tag-multiple-outline",
-  "pot-steam-outline",
-  "link",
-  "square-edit-outline",
-];
 
 class MatDialogStub {
   open = vi.fn();
 }
 
-const mockUser: UserOut = {
-  id: "test-user-id",
-  username: "testuser",
-  fullName: "Test User",
-  email: "test@example.com",
-  group: "group-id",
-  household: "household-id",
-  groupId: "group-id",
-  groupSlug: "test-group",
-  householdId: "household-id",
-  householdSlug: "test-household",
-  cacheKey: "abc123",
-};
+const mockUser = createMockUser();
 
 class AuthServiceStub {
   readonly user$ = signal<UserOut | null>(mockUser);
@@ -74,15 +40,26 @@ class ThemeServiceStub {
   cycle = vi.fn();
 }
 
+/**
+ * A MediaQueryList-shaped stub. `mobileQuery` is the shared instance the
+ * `MediaMatcher` stub returns, so tests can observe the component's media
+ * query interactions without reaching into component internals.
+ */
+function mockMediaQuery(matches: boolean) {
+  return {
+    matches,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+  };
+}
+
+const mobileQuery = mockMediaQuery(true);
+
 class MediaMatcherStub {
   matchMedia() {
-    return {
-      matches: true,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-    };
+    return mobileQuery;
   }
 }
 
@@ -96,6 +73,17 @@ describe("DefaultLayout", () => {
   let fixture: ComponentFixture<DefaultLayout>;
   let authService: AuthServiceStub;
 
+  async function createFixture() {
+    const fixture = TestBed.createComponent(DefaultLayout);
+    await fixture.whenStable();
+    return fixture;
+  }
+
+  function getLogoutButton(): HTMLButtonElement {
+    const logoutIcon = fixture.nativeElement.querySelector("mat-toolbar mat-icon[svgIcon='logout']")!;
+    return logoutIcon.closest("button") as HTMLButtonElement;
+  }
+
   beforeEach(async () => {
     mockLocalStorage();
 
@@ -108,18 +96,14 @@ describe("DefaultLayout", () => {
         { provide: ThemeService, useClass: ThemeServiceStub },
         { provide: TranslateService, useValue: mockTranslateService },
         { provide: MediaMatcher, useClass: MediaMatcherStub },
-        { provide: DomSanitizer, useValue: mockDomSanitizer },
         { provide: MatDialog, useClass: MatDialogStub },
+        { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
       ],
     }).compileComponents();
 
     authService = TestBed.inject(AuthService) as unknown as AuthServiceStub;
 
-    // Register mock SVG icons so MatIcon doesn't error
-    mockSvgIcons(TestBed.inject(MatIconRegistry), DEFAULT_LAYOUT_ICONS);
-
-    fixture = TestBed.createComponent(DefaultLayout);
-    await fixture.whenStable();
+    fixture = await createFixture();
   });
 
   afterEach(() => {
@@ -133,8 +117,7 @@ describe("DefaultLayout", () => {
     });
 
     it("should have a sidenav toggle button", () => {
-      const buttons = fixture.nativeElement.querySelectorAll("mat-toolbar button");
-      expect(buttons.length).toBeGreaterThan(0);
+      expect(fixture.nativeElement.querySelector("mat-toolbar mat-icon[svgIcon='menu']")).toBeTruthy();
     });
 
     it("should render theme toggle and language button components", () => {
@@ -145,9 +128,7 @@ describe("DefaultLayout", () => {
     it("should call auth.signOut when logout button is clicked", async () => {
       const signOutSpy = vi.spyOn(authService, "signOut");
 
-      const buttons = fixture.nativeElement.querySelectorAll("mat-toolbar > button");
-      const logoutButton = buttons[buttons.length - 1];
-      await logoutButton.click();
+      await getLogoutButton().click();
       await fixture.whenStable();
       expect(signOutSpy).toHaveBeenCalled();
     });
@@ -158,7 +139,7 @@ describe("DefaultLayout", () => {
       const loader = TestbedHarnessEnvironment.loader(fixture);
       const sidenav = await loader.getHarness(MatSidenavHarness);
 
-      // In mobile mode (isMobile=true), sidenav is closed
+      // In mobile mode the sidenav starts closed
       expect(await sidenav.isOpen()).toBe(false);
 
       const toggleButton = fixture.nativeElement.querySelector("mat-toolbar button:first-of-type");
@@ -173,32 +154,10 @@ describe("DefaultLayout", () => {
       expect(await sidenav.isOpen()).toBe(false);
     });
 
-    it("should have sidenav closed in mobile mode", () => {
-      const component = fixture.componentInstance as unknown as { isMobile: () => boolean };
-      expect(component.isMobile()).toBe(true);
-    });
-
-    it("should have sidenav open in desktop mode", async () => {
-      const mediaMatcher = TestBed.inject(MediaMatcher);
-      const matchMediaSpy = vi.spyOn(mediaMatcher, "matchMedia").mockImplementation(
-        () =>
-          ({
-            matches: false,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-            addListener: vi.fn(),
-            removeListener: vi.fn(),
-          }) as unknown as MediaQueryList,
-      );
-
-      fixture.destroy();
-      fixture = TestBed.createComponent(DefaultLayout);
-      await fixture.whenStable();
-
-      const desktopComponent = fixture.componentInstance as unknown as { isMobile: () => boolean };
-      expect(desktopComponent.isMobile()).toBe(false);
-
-      matchMediaSpy.mockRestore();
+    it("should have sidenav closed in mobile mode", async () => {
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const sidenav = await loader.getHarness(MatSidenavHarness);
+      expect(await sidenav.isOpen()).toBe(false);
     });
 
     it("should link to user profile page", () => {
@@ -206,9 +165,11 @@ describe("DefaultLayout", () => {
       expect(userBox.hasAttribute("routerLink")).toBe(true);
     });
 
-    it("should have 2 create links defined", () => {
-      const component = fixture.componentInstance as unknown as { createLinks: readonly unknown[] };
-      expect(component.createLinks.length).toBe(2);
+    it("should define 2 links in the create menu", async () => {
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const createMenu = await loader.getHarness(MatMenuHarness);
+      await createMenu.open();
+      expect((await createMenu.getItems()).length).toBe(2);
     });
 
     it("should display organizer links in expansion panel", () => {
@@ -228,6 +189,14 @@ describe("DefaultLayout", () => {
 
       const nameElement = fixture.nativeElement.querySelector("#user-box .name");
       expect(nameElement.textContent).toContain("testuser");
+    });
+
+    it("should not show user info when not authenticated", () => {
+      authService.user$.set(null);
+      fixture.detectChanges();
+
+      const nameElement = fixture.nativeElement.querySelector("#user-box .name");
+      expect(nameElement.textContent?.trim()).toBe("");
     });
 
     it("should display user avatar with correct URL", () => {
@@ -257,25 +226,37 @@ describe("DefaultLayout", () => {
     });
   });
 
-  describe("logout button", () => {
-    it("should show logout as icon button in mobile mode", () => {
-      const logoutButton = fixture.nativeElement.querySelector("mat-toolbar button:last-of-type");
-      expect(logoutButton).toBeTruthy();
+  describe("desktop mode", () => {
+    beforeEach(async () => {
+      const mediaMatcher = TestBed.inject(MediaMatcher);
+      vi.spyOn(mediaMatcher, "matchMedia").mockReturnValue(mockMediaQuery(false) as unknown as MediaQueryList);
+
+      // The component reads the media query during construction, so the
+      // mobile fixture from the outer beforeEach must be replaced.
+      fixture.destroy();
+      fixture = await createFixture();
     });
 
-    it("should not show user info when not authenticated", () => {
-      authService.user$.set(null);
-      fixture.detectChanges();
+    it("should have sidenav open", async () => {
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const sidenav = await loader.getHarness(MatSidenavHarness);
+      expect(await sidenav.isOpen()).toBe(true);
+    });
 
-      const nameElement = fixture.nativeElement.querySelector("#user-box .name");
-      expect(nameElement.textContent?.trim()).toBe("");
+    it("should render a labeled logout button", () => {
+      expect(getLogoutButton().textContent).toContain("[user.logout]");
+    });
+  });
+
+  describe("logout button", () => {
+    it("should render an icon-only logout button in mobile mode", () => {
+      expect(getLogoutButton().textContent?.trim()).toBe("");
     });
   });
 
   describe("cleanup", () => {
     it("should remove media query listener on destroy", () => {
-      const component = fixture.componentInstance as unknown as { _mobileQuery: MediaQueryList };
-      const removeEventListenerSpy = vi.spyOn(component._mobileQuery, "removeEventListener");
+      const removeEventListenerSpy = vi.spyOn(mobileQuery, "removeEventListener");
 
       fixture.destroy();
       expect(removeEventListenerSpy).toHaveBeenCalledWith("change", expect.any(Function));

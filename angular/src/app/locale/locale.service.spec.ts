@@ -13,29 +13,32 @@ const fakeTranslate: Partial<ITranslateService> = {
   use: vi.fn(),
 };
 
+/**
+ * Create a `LocaleService` seeded with an optional stored locale and browser languages.
+ * Locale resolution happens during construction, so tests that exercise detection
+ * get a fresh instance via `runInInjectionContext` instead of resetting the
+ * `TestBed` module.
+ */
+function createService(storedLocale?: string, languages: string[] = []): LocaleService {
+  if (storedLocale) {
+    localStorage.setItem("mealie-language", storedLocale);
+  }
+  vi.stubGlobal("navigator", { languages, language: languages[0] ?? "" });
+  return TestBed.runInInjectionContext(() => new LocaleService());
+}
+
 describe("LocaleService", () => {
   let service: LocaleService;
   let translate: TranslateService;
+
   beforeEach(() => {
     mockLocalStorage();
-    localStorage.clear();
-
-    vi.stubGlobal("navigator", {
-      languages: [],
-      language: "",
-    });
-    vi.stubGlobal("document", {
-      documentElement: {
-        lang: "",
-        dir: "",
-      },
-    });
 
     TestBed.configureTestingModule({
       providers: [{ provide: TranslateService, useValue: fakeTranslate }],
     });
 
-    service = TestBed.inject(LocaleService);
+    service = createService();
     translate = TestBed.inject(TranslateService);
 
     service.initialize();
@@ -48,67 +51,25 @@ describe("LocaleService", () => {
 
   describe("initialization", () => {
     it("should use the stored locale if it is a valid value", () => {
-      localStorage.setItem("mealie-language", "de-DE");
-      vi.stubGlobal("navigator", { languages: ["en-US"], language: "en-US" });
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [{ provide: TranslateService, useValue: fakeTranslate }],
-      });
-      service = TestBed.inject(LocaleService);
-
-      expect(service.locale()).toBe("de-DE");
+      expect(createService("de-DE", ["en-US"]).locale()).toBe("de-DE");
     });
 
     it("should ignore an invalid stored locale and fall through detection", () => {
-      localStorage.setItem("mealie-language", "xx-XX");
-
-      vi.stubGlobal("navigator", { languages: [], language: "" });
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [{ provide: TranslateService, useValue: fakeTranslate }],
-      });
-      service = TestBed.inject(LocaleService);
-
-      expect(service.locale()).toBe("en-US");
+      expect(createService("xx-XX").locale()).toBe("en-US");
     });
 
     it("should detect browser locale via exact match", () => {
-      vi.stubGlobal("navigator", { languages: ["fr-FR"], language: "fr-FR" });
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [{ provide: TranslateService, useValue: fakeTranslate }],
-      });
-      service = TestBed.inject(LocaleService);
-
-      expect(service.locale()).toBe("fr-FR");
+      const detected = createService(undefined, ["fr-FR"]);
+      expect(detected.locale()).toBe("fr-FR");
       expect(localStorage.getItem("mealie-language")).toBe("fr-FR");
     });
 
     it("should detect browser locale via base language fallback", () => {
-      vi.stubGlobal("navigator", { languages: ["de-AT"], language: "de-AT" });
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [{ provide: TranslateService, useValue: fakeTranslate }],
-      });
-      service = TestBed.inject(LocaleService);
-
-      expect(service.locale()).toBe("de-DE");
+      expect(createService(undefined, ["de-AT"]).locale()).toBe("de-DE");
     });
 
     it("should fall back to en-US when no match exists", () => {
-      vi.stubGlobal("navigator", { languages: ["xx-XX"], language: "xx-XX" });
-
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [{ provide: TranslateService, useValue: fakeTranslate }],
-      });
-      service = TestBed.inject(LocaleService);
-
-      expect(service.locale()).toBe("en-US");
+      expect(createService(undefined, ["xx-XX"]).locale()).toBe("en-US");
     });
 
     it("should register all locales with TranslateService", () => {

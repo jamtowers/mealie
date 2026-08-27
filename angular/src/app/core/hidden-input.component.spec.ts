@@ -3,20 +3,16 @@ import { TestbedHarnessEnvironment } from "@angular/cdk/testing/testbed";
 import { Component, signal } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { FormField, form, required, submit } from "@angular/forms/signals";
-import { DomSanitizer } from "@angular/platform-browser";
 
 import { MatIconRegistry } from "@angular/material/icon";
 import { MatInputHarness } from "@angular/material/input/testing";
 
-import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
-import { mockDomSanitizer } from "@testing/dom-sanitizer.mock";
-import { mockSvgIcons } from "@testing/mock-icons.mock";
+import { MockMatIconRegistry } from "@testing/mock-icons.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import { HiddenInputComponent } from "./hidden-input.component";
-
-const SVG_ICONS = ["lock", "eye", "eye-off"];
 
 @Component({
   template: `
@@ -45,20 +41,10 @@ describe("HiddenInputComponent", () => {
     await TestBed.configureTestingModule({
       imports: [TestHostComponent],
       providers: [
-        provideTranslateService({ fallbackLang: "en-US" }),
-        { provide: DomSanitizer, useValue: mockDomSanitizer },
+        { provide: TranslateService, useValue: mockTranslateService },
+        { provide: MatIconRegistry, useValue: new MockMatIconRegistry() },
       ],
     }).compileComponents();
-
-    const translate = TestBed.inject(TranslateService);
-    translate.setTranslation("en-US", {
-      "user.password": "Password",
-      "user.hide-password": "Hide Password",
-      "validators.required": "This Field is Required",
-    });
-    await firstValueFrom(translate.use("en-US"));
-
-    mockSvgIcons(TestBed.inject(MatIconRegistry), SVG_ICONS);
 
     fixture = TestBed.createComponent(TestHostComponent);
     await fixture.whenStable();
@@ -80,13 +66,13 @@ describe("HiddenInputComponent", () => {
   });
 
   it("should render the label from the translate key", () => {
-    expect(fixture.nativeElement.querySelector("mat-label")?.textContent).toBe("Password");
+    expect(fixture.nativeElement.querySelector("mat-label")?.textContent).toBe("[user.password]");
   });
 
   it("should hide the password value initially", () => {
     expect(inputEl().type).toBe("password");
     expect(toggleBtn().getAttribute("aria-pressed")).toBe("true");
-    expect(toggleBtn().getAttribute("aria-label")).toBe("Hide Password");
+    expect(toggleBtn().getAttribute("aria-label")).toBe("[user.hide-password]");
   });
 
   it("should toggle password visibility", async () => {
@@ -107,7 +93,7 @@ describe("HiddenInputComponent", () => {
     await submitForm();
 
     const error = fixture.nativeElement.querySelector("mat-error");
-    expect(error.textContent).toBe("This Field is Required");
+    expect(error.textContent).toBe("[validators.required]");
   });
 
   it("should not show an error for a non-empty value", async () => {

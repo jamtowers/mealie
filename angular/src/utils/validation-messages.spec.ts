@@ -9,10 +9,9 @@ import {
   form,
 } from "@angular/forms/signals";
 
-import { TranslateService, provideTranslateParser, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 
-import { MealieParser } from "@app/locale/mealie-parser";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import { firstErrorMessage, url, urlOptional, validationErrorI18n, whitespace } from "./validation-messages";
 
@@ -78,25 +77,10 @@ describe("firstErrorMessage", () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [
-        provideTranslateService({
-          fallbackLang: "en-US",
-          parser: provideTranslateParser(MealieParser),
-        }),
-      ],
+      providers: [{ provide: TranslateService, useValue: mockTranslateService }],
     }).compileComponents();
 
     translate = TestBed.inject(TranslateService);
-    translate.setTranslation("en-US", {
-      "validators.required": "This Field is Required",
-      "validators.invalid-email": "Email Must Be Valid",
-      "validators.min-length": "Must Be At Least {min} Characters",
-      "validators.max-length": "Must Be At Most {max} Characters",
-      "validators.no-whitespace": "No Whitespace Allowed",
-      "validators.invalid-url": "Must Be A Valid URL",
-      "user.password-must-match": "Password must match",
-    });
-    await firstValueFrom(translate.use("en-US"));
   });
 
   it("should return null when there are no errors", () => {
@@ -104,21 +88,21 @@ describe("firstErrorMessage", () => {
   });
 
   it("should return the translated required message", () => {
-    expect(firstErrorMessage(translate, [new RequiredValidationError()])).toBe("This Field is Required");
+    expect(firstErrorMessage(translate, [new RequiredValidationError()])).toBe("[validators.required]");
   });
 
-  it("should interpolate the min length param", () => {
-    expect(firstErrorMessage(translate, [new MinLengthValidationError(3)])).toBe("Must Be At Least 3 Characters");
+  it("should return the min length message", () => {
+    expect(firstErrorMessage(translate, [new MinLengthValidationError(3)])).toBe("[validators.min-length]");
   });
 
-  it("should interpolate the max length param", () => {
-    expect(firstErrorMessage(translate, [new MaxLengthValidationError(3)])).toBe("Must Be At Most 3 Characters");
+  it("should return the max length message", () => {
+    expect(firstErrorMessage(translate, [new MaxLengthValidationError(3)])).toBe("[validators.max-length]");
   });
 
   it("should translate a password match error", () => {
     const error: ValidationError = { kind: "match" };
 
-    expect(firstErrorMessage(translate, [error])).toBe("Password must match");
+    expect(firstErrorMessage(translate, [error])).toBe("[user.password-must-match]");
   });
 
   it("should fall back to the validator message for unmapped errors", () => {

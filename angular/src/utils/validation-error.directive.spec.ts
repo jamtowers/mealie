@@ -7,8 +7,9 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatInputHarness } from "@angular/material/input/testing";
 
-import { TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { firstValueFrom } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
+
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import { ValidationErrorDirective } from "./validation-error.directive";
 
@@ -39,20 +40,12 @@ class TestHostComponent {
 
 describe("ValidationErrorDirective", () => {
   let fixture: ComponentFixture<TestHostComponent>;
-  let translate: TranslateService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TestHostComponent],
-      providers: [provideTranslateService({ fallbackLang: "en-US" })],
+      providers: [{ provide: TranslateService, useValue: mockTranslateService }],
     }).compileComponents();
-
-    translate = TestBed.inject(TranslateService);
-    translate.setTranslation("en-US", {
-      "validators.required": "This Field is Required",
-      "validators.invalid-email": "Email Must Be Valid",
-    });
-    await firstValueFrom(translate.use("en-US"));
 
     fixture = TestBed.createComponent(TestHostComponent);
     await fixture.whenStable();
@@ -77,14 +70,14 @@ describe("ValidationErrorDirective", () => {
   it("should show the required error when submitting an empty form", async () => {
     await submitForm();
 
-    expect(errorText()).toBe("This Field is Required");
+    expect(errorText()).toBe("[validators.required]");
   });
 
   it("should show the email error for an invalid email address", async () => {
     await setInputValue("not-an-email");
     await submitForm();
 
-    expect(errorText()).toBe("Email Must Be Valid");
+    expect(errorText()).toBe("[validators.invalid-email]");
   });
 
   it("should not show an error for a valid email address", async () => {

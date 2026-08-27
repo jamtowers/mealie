@@ -1,7 +1,7 @@
 import { signal } from "@angular/core";
-import { of } from "rxjs";
 
 import { ITranslateService } from "@ngx-translate/core";
+import { of } from "rxjs";
 
 /**
  * Partial fake `TranslateService` for component tests.
@@ -11,5 +11,5 @@ export const mockTranslateService = {
   currentLang: signal("en-US"),
   instant: (key: string | string[]) => `[${key}]`,
   get: (key: string | string[]) => of(`[${key}]`),
-  translate: () => signal(""),
+  translate: (key: string | string[]) => signal(`[${key}]`),
 } as unknown as ITranslateService;

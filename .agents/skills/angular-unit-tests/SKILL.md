@@ -15,11 +15,14 @@ The `@testing/` path alias maps to `src/testing/`. This directory contains share
 
 Available utilities:
 
-- **`mockLocalStorage`** (`@testing/local-storage.mock`) — mocks `window.localStorage` for auth state.
-- **`mockLocation`** (`@testing/location.mock`) — mocks `window.location` with a configurable URL.
-- **`mockDomSanitizer`** (`@testing/dom-sanitizer.mock`) — bypasses Angular's `DomSanitizer` security checks. Required when registering SVG icon literals via `MatIconRegistry.addSvgIconLiteral()`.
-- **`mockSvgIcons`** (`@testing/mock-icons.mock`) — registers arbitrary mock SVG icons given a list of names, ensure this is called before `TestBed.createComponent(...)`.
-- **`mockTranslateService`** (`@testing/translate-service.mock`) — partial fake `TranslateService` whose `instant()`/`get()` return `[key]`, for component tests.
+- **`mockAppInfo`** (`@testing/app-info.mock`) — `AppInfo` factory with safe defaults; accepts `Partial<AppInfo>` overrides.
+- **`mockLocalStorage`** (`@testing/local-storage.mock`) — mocks `window.localStorage` for auth state. Always starts empty — never call `clear()` on top of it.
+- **`mockLocation`** (`@testing/location.mock`) — mocks `window.location` with a configurable URL. It does **not** restore the original: capture the descriptor at module level (`const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, "location")`) and restore it in `afterEach` with `Object.defineProperty(window, "location", originalLocationDescriptor)`.
+- **`MockMatSnackBar`** (`@testing/mat-snack-bar.mock`) — `MatSnackBar` double whose `open` is a `vi.fn()`. Provide it as `{ provide: MatSnackBar, useValue: new MockMatSnackBar() }` and inject it back for assertions.
+- **`MockMatIconRegistry`** (`@testing/mock-icons.mock`) — `MatIconRegistry` double whose `getNamedSvgIcon` returns a dummy `<svg>` for **any** icon name, so specs never need to know or register the icons a template uses. Provide it as `{ provide: MatIconRegistry, useValue: new MockMatIconRegistry() }`.
+- **`mockTranslateService`** (`@testing/translate-service.mock`) — partial fake `TranslateService` whose `instant()`/`get()` return `[key]`. Use this for component tests instead of seeding translation strings per spec.
+- **`createMockUser`** (`@testing/user.mock`) — `UserOut` factory with safe defaults; accepts `Partial<UserOut>` overrides.
+- **`mockActivatedRoute` / `mockRouterState` / `mockParseUrl`** (`@testing/route.mock`) — guard-test factories: an `ActivatedRouteSnapshot` (optionally shaped with `params`/`queryParams`), a `RouterStateSnapshot`, and a `Router.parseUrl` spy. Create `mockRoute` fresh per test (in `beforeEach`), never as a mutated module-level const.
 
 Place new shared mocks and testing utilities in this directory rather than duplicating them across spec files.  
 Update this list if you add a new shared testing utility.
@@ -240,24 +243,16 @@ expect(pipe.transform("abc")).toBe("Abc");
 
 **Full guide:** https://github.com/CodeAndWeb/ngx-translate.org/raw/refs/heads/main/src/content/docs/30-recipes/50-testing-with-itranslateservice.md
 
-### Option A: Partial fake (most common)
+### Option A: Shared `mockTranslateService` (most common)
 
-For component tests that only need `instant()` or `get()`:
+For component tests that only need `instant()` or `get()`, use the shared mock from `@testing/translate-service.mock`:
 
 ```ts
-import { signal } from "@angular/core";
-
-import { ITranslateService, TranslateService } from "@ngx-translate/core";
-import { of } from "rxjs";
-
-const fakeTranslate: Partial<ITranslateService> = {
-  currentLang: signal("en-US"),
-  instant: (key: string | string[]) => `[${key}]`,
-  get: (key: string | string[]) => of(`[${key}]`),
-};
+import { TranslateService } from "@ngx-translate/core";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 TestBed.configureTestingModule({
-  providers: [{ provide: TranslateService, useValue: fakeTranslate as unknown as ITranslateService }],
+  providers: [{ provide: TranslateService, useValue: mockTranslateService }],
 });
 ```
 
@@ -285,6 +280,15 @@ Use Angular Material harnesses instead of DOM queries. They make tests more read
 
 Guide on how to use material Component Harnesses can be found here: <https://github.com/angular/components/raw/refs/heads/main/guides/using-component-harnesses.md>.
 When testing material components use the material test harnesses over document queries.
+
+Material harness gotchas learned in practice:
+
+- **`enterText`/`sendKeys` append to the existing value** — call `await harness.clear()` before `enterText` on pre-filled inputs, or your text concatenates onto the current value.
+- **String `text`/`stringMatches` filters match exactly** — use a RegExp (e.g. `text: /German/`) for partial matching; a string like `"German"` only matches options whose _entire_ text is `"German"`.
+- **Black-box `mat-autocomplete` panel recipe in jsdom** (no component internals needed):
+  - `harness.focus()` opens the panel once; the component's `opened` handler typically closes it immediately — use this as a "prime".
+  - To re-open after a close: `inputElement.click()` (a plain focus is not enough).
+  - To close without selecting: `inputElement.blur()` then `document.body.click()` — the document-click stream requires the input to be unfocused, so blur first. Escape is not viable this way: the keydown listener is on the overlay element, not the input.
 
 ## Custom Components Harnesses
 
@@ -379,8 +383,12 @@ Use this judiciously — only suppress output you know is expected and not indic
 3. **No implementation details** — test behavior, not internal state or DOM structure.
 4. **Arrange-Act-Assert** — structure each test clearly in three phases.
 5. **Clean up side effects** — restore mocks, clear localStorage, etc., in `beforeEach`.
-6. **Clean up spies in `afterEach`** — use `mockClear()`, `mockReset()`, `mockRestore()`, or `vi.restoreAllMocks()` depending on whether spies are reused across tests or recreated each test.
-7. **Suppress expected console output** — use `vi.spyOn(console, "warn").mockReturnValue()` to keep test output clean. Restore with `vi.restoreAllMocks()`.
+6. **Clean up spies in `afterEach` with `vi.restoreAllMocks()`** — prefer one `vi.restoreAllMocks()` in `afterEach` over scattering per-spy `mockRestore()` calls inside test bodies.
+7. **Suppress expected console output** — use `vi.spyOn(console, "warn").mockReturnValue()` in `beforeEach` to keep test output clean.
+8. **No white-box access** — never read or mutate protected/private members of the unit under test (no bracket access, no cast helpers). Observe behavior through the DOM, harnesses, and collaborator mocks (e.g. firing a mocked `MatDialogRef.beforeClosed` subject as the "dialog starts closing" handle).
+9. **No `TestBed.resetTestingModule()` inside tests** — use a file-local factory (e.g. `createService(...)`) that builds a fresh instance per test instead.
+10. **Guard redirect tests must assert the destination** — assert `command.redirectTo`, `navigationBehaviorOptions` (e.g. `{ skipLocationChange: true }`), and the `parseUrl` call — not just `toBeInstanceOf(RedirectCommand)`.
+11. **Template event bindings must target outputs that exist** — if a binding references an output the installed library version does not declare, it silently never fires; verify outputs against the library source/d.ts instead of assuming.
 
 ## Finishing Checks
 

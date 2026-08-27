@@ -1,5 +1,6 @@
 /**
- * Mocks `window.localStorage` for test environments.
+ * Mocks `window.localStorage` with a fresh, empty storage object for test
+ * environments.
  *
  * Call this once per test in `beforeEach` or at the top of a `beforeAll`.
  * Returns the backing storage object so tests can inspect or mutate values
@@ -8,7 +9,6 @@
  * ```ts
  * beforeEach(() => {
  *   mockLocalStorage();
- *   localStorage.clear();
  * });
  * ```
  */

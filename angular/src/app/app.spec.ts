@@ -1,6 +1,6 @@
 import { provideHttpClient } from "@angular/common/http";
 import { HttpTestingController, provideHttpClientTesting } from "@angular/common/http/testing";
-import { Component, signal } from "@angular/core";
+import { Component } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { Title } from "@angular/platform-browser";
 import { Routes, provideRouter } from "@angular/router";
@@ -8,10 +8,11 @@ import { RouterTestingHarness } from "@angular/router/testing";
 
 import { MatIconRegistry } from "@angular/material/icon";
 
-import { ITranslateService, TranslateService, provideTranslateService } from "@ngx-translate/core";
-import { lastValueFrom, of } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
+import { lastValueFrom } from "rxjs";
 
 import { mockLocalStorage } from "@testing/local-storage.mock";
+import { mockTranslateService } from "@testing/translate-service.mock";
 
 import { App } from "./app";
 
@@ -50,7 +51,7 @@ describe("App", () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideTranslateService({ fallbackLang: "en-US" }),
+        { provide: TranslateService, useValue: mockTranslateService },
       ],
     }).compileComponents();
 
@@ -81,8 +82,6 @@ describe("App", () => {
 
     const iconRegistry = TestBed.inject(MatIconRegistry);
 
-    expect(iconRegistry).toBeTruthy();
-
     const mealieIcon = lastValueFrom(iconRegistry.getNamedSvgIcon("silverware-variant"));
 
     const req = httpTesting.expectOne("./assets/mdi.svg", "Request to load the icon file");
@@ -101,16 +100,6 @@ describe("App", () => {
 describe("App - Page Title", () => {
   let fixture: ComponentFixture<App>;
   let harness: RouterTestingHarness;
-
-  const translations: Record<string, string> = {
-    "login.login": "Login",
-    "general.appTitle": "Dashboard",
-  };
-
-  const fakeTranslate: Partial<ITranslateService> = {
-    currentLang: signal("en-US"),
-    get: (key: string | string[]) => of(translations[key as string] ?? key),
-  };
 
   const routes: Routes = [
     {
@@ -145,7 +134,11 @@ describe("App - Page Title", () => {
 
     await TestBed.configureTestingModule({
       imports: [App, LoginComponent, DashboardComponent, ChildComponent, EmptyComponent],
-      providers: [provideRouter(routes), provideHttpClient(), { provide: TranslateService, useValue: fakeTranslate }],
+      providers: [
+        provideRouter(routes),
+        provideHttpClient(),
+        { provide: TranslateService, useValue: mockTranslateService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(App);
@@ -163,14 +156,14 @@ describe("App - Page Title", () => {
     await harness.navigateByUrl("/login", LoginComponent);
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Login | Mealie");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("[login.login] | Mealie");
   });
 
   it("should set translated title for parent route", async () => {
     await harness.navigateByUrl("/", DashboardComponent);
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Dashboard | Mealie");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("[general.appTitle] | Mealie");
   });
 
   it("should fall back to default title when route has no title key", async () => {
@@ -184,13 +177,13 @@ describe("App - Page Title", () => {
     await harness.navigateByUrl("/child");
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("child.title | Mealie");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("[child.title] | Mealie");
   });
 
   it("should use parent title when child route has no title key", async () => {
     await harness.navigateByUrl("/empty-child");
     await fixture.whenStable();
 
-    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("Dashboard | Mealie");
+    expect(TestBed.inject(Title).setTitle).toHaveBeenCalledWith("[general.appTitle] | Mealie");
   });
 });
